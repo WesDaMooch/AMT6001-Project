@@ -17,12 +17,15 @@ public:
     void prepare(const juce::dsp::ProcessSpec& spec);
     void reset();
 
+    void setFilter(double newFundimentalFreq);
+
 private:
+
     juce::ADSR exciter;
 
     juce::dsp::StateVariableTPTFilterType bandpassType = juce::dsp::StateVariableTPTFilterType::bandpass;
-    double cutoff = 440;
-    double res = 10;
+    double fundimentalFreq = 130; 
+    double res = 50;
     juce::dsp::StateVariableTPTFilter<float> firstResonator;
 
     juce::AudioBuffer<float> processingBuffer;

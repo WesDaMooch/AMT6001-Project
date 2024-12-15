@@ -17,10 +17,13 @@ ReSoundAudioProcessorEditor::ReSoundAudioProcessorEditor (ReSoundAudioProcessor&
     setSize (500, 600);
 
     addAndMakeVisible(&keyboardComponent);
+    keyboardState.addListener(&audioProcessor.getMidiMessageCollector());
 }
 
 ReSoundAudioProcessorEditor::~ReSoundAudioProcessorEditor()
 {
+    //Clean up listeners
+    keyboardState.removeListener(&audioProcessor.getMidiMessageCollector());
 }
 
 //==============================================================================

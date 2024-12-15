@@ -106,8 +106,10 @@ void ReSoundAudioProcessor::changeProgramName (int index, const juce::String& ne
 
 //==============================================================================
 void ReSoundAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
-{
-    synth.setCurrentPlaybackSampleRate(sampleRate);                     //set samplerate
+{   
+    //Set Synth SampleRate
+    synth.setCurrentPlaybackSampleRate(sampleRate);                    
+    midiMessageCollector.reset(sampleRate);
 
     juce::dsp::ProcessSpec spec;
     spec.sampleRate = sampleRate;
@@ -163,12 +165,26 @@ void ReSoundAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
+
+    //Clear Midi Queue
+    midiMessageCollector.removeNextBlockOfMessages(midiMessages, buffer.getNumSamples());
+
+    //Get Midi Message and convert to 
+    double fundimentalFreq;
+    for (juce::MidiMessageMetadata metadata : midiMessages)
+    {
+        if (metadata.numBytes > 0)
+        {
+            juce::MidiMessage message = metadata.getMessage();
+            if (message.isNoteOn())
+            {
+                fundimentalFreq = message.getMidiNoteInHertz(message.getNoteNumber());
+                break;
+            }
+        }
+    }
+
+
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
@@ -178,6 +194,8 @@ void ReSoundAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
         if (voice != nullptr)
         {
             //sets
+            //set first reson freq with midi
+            voice->setFilter(fundimentalFreq);
         }
     }
 
@@ -215,4 +233,9 @@ void ReSoundAudioProcessor::setStateInformation (const void* data, int sizeInByt
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new ReSoundAudioProcessor();
+}
+
+juce::MidiMessageCollector& ReSoundAudioProcessor::getMidiMessageCollector()
+{
+    return midiMessageCollector;
 }

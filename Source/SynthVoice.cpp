@@ -57,7 +57,7 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
     exciter.applyEnvelopeToBuffer(processingBuffer, 0, numSamples);
 
     firstResonator.setType(bandpassType);
-    firstResonator.setCutoffFrequency(cutoff);
+    firstResonator.setCutoffFrequency(fundimentalFreq);
     firstResonator.setResonance(res);
 
     juce::dsp::AudioBlock<float> block(processingBuffer);
@@ -79,11 +79,9 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
 
 void SynthVoice::prepare(const juce::dsp::ProcessSpec& spec)
 {
-              
-
     exciter.setSampleRate(spec.sampleRate);
     //exciter.setParameters(juce::ADSR::Parameters(0.001f, 0.01f, 0, 0));
-    exciter.setParameters(juce::ADSR::Parameters(0.01f, 0.01f, 0, 0));
+    exciter.setParameters(juce::ADSR::Parameters(0.001f, 1.0f, 0, 0));
 
     firstResonator.prepare(spec);
 
@@ -95,4 +93,9 @@ void SynthVoice::reset()
     exciter.reset();
 
     firstResonator.reset();
+}
+
+void SynthVoice::setFilter(double newFundimentalFreq)
+{
+    fundimentalFreq = newFundimentalFreq; 
 }
