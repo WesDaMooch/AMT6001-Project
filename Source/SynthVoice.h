@@ -17,16 +17,30 @@ public:
     void prepare(const juce::dsp::ProcessSpec& spec);
     void reset();
 
+    //internal update funtions
+    void updateFundamentalResonator();
+
+    //calls for UI
     void setFilter(double newFundimentalFreq);
+    
 
 private:
 
+    double sampleRate = 44100; 
+
     juce::ADSR exciter;
 
+    //SVF Resonator
     juce::dsp::StateVariableTPTFilterType bandpassType = juce::dsp::StateVariableTPTFilterType::bandpass;
-    double fundimentalFreq = 130; 
-    double res = 50;
+    
+    double res = 20;
     juce::dsp::StateVariableTPTFilter<float> firstResonator;
+
+    //IIR Resonator
+    juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> fundamentalResonator;
+    double fundimentalFreq = 130;
+    double fundimentalRes = 20; 
+    juce::dsp::Gain<float> gain;
 
     juce::AudioBuffer<float> processingBuffer;
 };

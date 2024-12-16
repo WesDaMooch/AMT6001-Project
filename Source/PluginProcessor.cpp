@@ -25,7 +25,7 @@ ReSoundAudioProcessor::ReSoundAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       )//, bandPassFilter(juce::dsp::IIR::Coefficients<float>::makeBandPass(44100, 200, 10))
 #endif
 {   
     for (int i = 0; i < Constants::num_voices; i++)

@@ -62,5 +62,7 @@ private:
 
     juce::MidiMessageCollector midiMessageCollector;
 
+    //juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> bandPassFilter;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ReSoundAudioProcessor)
 };
