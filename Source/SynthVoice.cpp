@@ -3,9 +3,16 @@
 
 //what the hell is this
 //Initalise Resonant Filters
-SynthVoice::SynthVoice() //:fundamentalResonator(juce::dsp::IIR::Coefficients<float>::makeBandPass(44100, 130, 100))
+SynthVoice::SynthVoice()//:fundamentalResonator(juce::dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, fundimentalFreq, fundimentalRes))
 {   
-    gain.setGainLinear(10.0f);
+    gain.setGainLinear(1.0f);
+
+    //move this if I want to make numResonators a param
+    filterBank.resize(numResonators);
+    bufferBank.resize(numResonators);
+    freqBank.resize(numResonators);
+    resBank.resize(numResonators);
+    gainBank.resize(numResonators);
 }
 
 bool SynthVoice::canPlaySound(juce::SynthesiserSound* sound)
@@ -15,9 +22,14 @@ bool SynthVoice::canPlaySound(juce::SynthesiserSound* sound)
 
 void SynthVoice::startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound* sound, int currentPitchWheelPosition)
 {
-    //need a way to start note
-    //exciter env.noteOn?
+    //Trigger Exciter
     exciter.noteOn();
+
+    //make this except midi number? - updateFundamentalResonator(midiNoteNumber)
+    updateFundamentalResonator();
+
+    //Set the gain to resonance, rudimentary scaling
+    gain.setGainLinear(fundimentalRes*0.5f);
 }
 
 void SynthVoice::stopNote(float velocity, bool allowTailOff)
@@ -41,43 +53,56 @@ void SynthVoice::controllerMoved(int controllerNumber, int newControllerValue)
 void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int startSample, int numSamples)
 {
     auto numChannels = outputBuffer.getNumChannels();
-    processingBuffer.setSize(numChannels, numSamples, false, false, true);
-    processingBuffer.clear();
 
+    for (auto i = 0; i < numResonators; i++)
+    {
+        //Init bufferBank
+        bufferBank[i].setSize(numChannels, numSamples, false, false, true);
+        bufferBank[i].clear();
+    }
+
+    //Get first buffer in bank and fill with exciter
+    juce::AudioBuffer<float> baseBuffer = bufferBank[0];
 
     for (int channel = 0; channel < numChannels; ++channel)
     {
-        auto* channelData = processingBuffer.getWritePointer(channel);
+        auto* channelData = baseBuffer.getWritePointer(channel);
 
-        for (auto sampleIndex = 0; sampleIndex < processingBuffer.getNumSamples(); sampleIndex++)
+        for (auto sampleIndex = 0; sampleIndex < baseBuffer.getNumSamples(); sampleIndex++)
         {
             *(channelData + sampleIndex) = 1;
             //*(channelData + sampleIndex) = exciter.getNextSample();
         }
     }
     
-    exciter.applyEnvelopeToBuffer(processingBuffer, 0, numSamples);
+    //Apply Exciter Env
+    exciter.applyEnvelopeToBuffer(baseBuffer, 0, numSamples);
 
-    //firstResonator.setType(bandpassType);
-    //firstResonator.setCutoffFrequency(fundimentalFreq);
-    //firstResonator.setResonance(res);
 
-    //juce::dsp::AudioBlock<float> block(processingBuffer);
-    //juce::dsp::ProcessContextReplacing<float> context(block);
-    //firstResonator.process(context);
-
-    //set cutoff
-
-    juce::dsp::AudioBlock<float> block(processingBuffer);
-
-    updateFundamentalResonator();
-    fundamentalResonator.process(juce::dsp::ProcessContextReplacing<float>(block));
-    gain.process(juce::dsp::ProcessContextReplacing<float>(block));
-
-    //use this as a way to add buffers from res filters together?
-    for (int channel = 0; channel < numChannels; ++channel)
+    //Copy Exciter in baseBuffer to other buffers - could do thos above
+    for (auto i = 0; i < numResonators; i++)
     {
-        outputBuffer.addFrom(channel, startSample, processingBuffer, channel, 0, numSamples);
+        //bufferBank[i].makeCopyOf(baseBuffer, 0, numSamples);
+        bufferBank[i].makeCopyOf(baseBuffer, numSamples);
+    }
+
+
+    //Process buffers through filterBank
+    for (auto i = 0; i < numResonators; i++)
+    {
+        juce::dsp::AudioBlock<float> block(bufferBank[i]);
+        filterBank[i].process(juce::dsp::ProcessContextReplacing<float>(block));
+        gain.process(juce::dsp::ProcessContextReplacing<float>(block));
+        //gainBank[i].process...
+    }
+
+    //Mix bufferBank to outputBuffer
+    for (int channel = 0; channel < numChannels; ++channel)
+    {   
+        for (auto i = 0; i < numResonators; i++)
+        {
+            outputBuffer.addFrom(channel, startSample, bufferBank[i], channel, 0, numSamples);
+        }
     }
 
     //if (!exciter.isActive())
@@ -90,12 +115,14 @@ void SynthVoice::prepare(const juce::dsp::ProcessSpec& spec)
 {
     sampleRate = spec.sampleRate; 
 
-    exciter.setSampleRate(spec.sampleRate);
+    exciter.setSampleRate(sampleRate);
     exciter.setParameters(juce::ADSR::Parameters(0.001f, 0.01f, 0, 0));
     //exciter.setParameters(juce::ADSR::Parameters(0.001f, 1.0f, 0, 0));
 
-    firstResonator.prepare(spec);
-    fundamentalResonator.prepare(spec);
+    for (auto i = 0; i < numResonators; i++)
+    {
+        filterBank[i].prepare(spec);
+    }
 
     reset();
 }
@@ -104,22 +131,40 @@ void SynthVoice::reset()
 {
     exciter.reset();
 
-    firstResonator.reset();
-    fundamentalResonator.reset();
+    for (auto i = 0; i < numResonators; i++)
+    {
+        filterBank[i].reset();
+    }
 }
 
 void SynthVoice::updateFundamentalResonator()
 {
-    *fundamentalResonator.state = *juce::dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, fundimentalFreq, fundimentalRes);
+    //ArrayCoefficients does not allocate memory and Coefficients does...
+    
+    *filterBank[0].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate,
+                            fundimentalFreq, fundimentalRes);
+    *filterBank[1].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate,
+                            fundimentalFreq * 1.8f, fundimentalRes);
+    *filterBank[2].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate,
+                            fundimentalFreq, fundimentalRes);
+    *filterBank[3].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate,
+                            fundimentalFreq * 3.5f, fundimentalRes);
+    *filterBank[4].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate,
+                            fundimentalFreq * 2.6, fundimentalRes);
+    *filterBank[5].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate,
+                            fundimentalFreq * 4.2f, fundimentalRes);
 }
 
 
-void SynthVoice::setFilter(double newFundimentalFreq)
+void SynthVoice::setFundamentalFreq(double newFundimentalFreq)
 {
-    //renname func: setFundamentalFreq
     if (newFundimentalFreq < 20.0f)
         newFundimentalFreq = 20.0f;
 
     fundimentalFreq = newFundimentalFreq; 
 }
-//make a function that is passed a filter and sets the freq and q?
+
+void SynthVoice::setFundamentalRes(double newFundimentalRes)
+{
+    fundimentalRes = newFundimentalRes; 
+}

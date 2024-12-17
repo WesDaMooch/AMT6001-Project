@@ -54,15 +54,19 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+
     juce::MidiMessageCollector& getMidiMessageCollector();
+    void setRes(double newRes); 
+
 
 private:
     //==============================================================================
     juce::Synthesiser synth;
 
     juce::MidiMessageCollector midiMessageCollector;
-
-    //juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> bandPassFilter;
+    
+    //make hmm
+    double res = 0.1f; 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ReSoundAudioProcessor)
 };

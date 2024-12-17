@@ -25,7 +25,7 @@ ReSoundAudioProcessor::ReSoundAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       )//, bandPassFilter(juce::dsp::IIR::Coefficients<float>::makeBandPass(44100, 200, 10))
+                       )
 #endif
 {   
     for (int i = 0; i < Constants::num_voices; i++)
@@ -195,7 +195,8 @@ void ReSoundAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
         {
             //sets
             //set first reson freq with midi
-            voice->setFilter(fundimentalFreq);
+            voice->setFundamentalFreq(fundimentalFreq);
+            voice->setFundamentalRes(res);
         }
     }
 
@@ -238,4 +239,9 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 juce::MidiMessageCollector& ReSoundAudioProcessor::getMidiMessageCollector()
 {
     return midiMessageCollector;
+}
+
+void ReSoundAudioProcessor::setRes(double newRes)
+{
+    res = newRes; 
 }

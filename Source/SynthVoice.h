@@ -21,7 +21,8 @@ public:
     void updateFundamentalResonator();
 
     //calls for UI
-    void setFilter(double newFundimentalFreq);
+    void setFundamentalFreq(double newFundimentalFreq);
+    void setFundamentalRes(double newFundimentalRes);
     
 
 private:
@@ -30,17 +31,22 @@ private:
 
     juce::ADSR exciter;
 
-    //SVF Resonator
-    juce::dsp::StateVariableTPTFilterType bandpassType = juce::dsp::StateVariableTPTFilterType::bandpass;
-    
-    double res = 20;
-    juce::dsp::StateVariableTPTFilter<float> firstResonator;
-
-    //IIR Resonator
-    juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> fundamentalResonator;
     double fundimentalFreq = 130;
-    double fundimentalRes = 20; 
+    double fundimentalRes = 200;
     juce::dsp::Gain<float> gain;
 
-    juce::AudioBuffer<float> processingBuffer;
+    //Params
+    //SPREAD 1 - 3
+    //HARMO 1 - numResonators (6)
+    //SHAPE 0 - 1
+
+    //IIR Filter Bank
+    const int numResonators = 6;
+    std::vector<juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>>> filterBank;
+    std::vector<juce::AudioBuffer<float>> bufferBank;
+    std::vector<double> freqBank;
+    std::vector<double> resBank;
+    std::vector<juce::dsp::Gain<float>> gainBank;
+
+
 };
