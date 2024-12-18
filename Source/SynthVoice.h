@@ -23,6 +23,9 @@ public:
     //calls for UI
     void setFundamentalFreq(double newFundimentalFreq);
     void setFundamentalRes(double newFundimentalRes);
+
+    void setSpread(double newSpread);
+    void setShape(double newShape);
     
 
 private:
@@ -33,20 +36,27 @@ private:
 
     double fundimentalFreq = 130;
     double fundimentalRes = 200;
-    juce::dsp::Gain<float> gain;
 
     //Params
-    //SPREAD 1 - 3
     //HARMO 1 - numResonators (6)
-    //SHAPE 0 - 1
+    double spread = 1;
+    double shape = 0;
+
+
+    //Vibrational modes of a circular membrane
+    //after Berg and Stork - who dis?
+    //is there a way of calulating nth mode - wave equation help
+    std::array<float, 6> circularModes = {1.59f, 2.14f, 2.3f, 2.65f, 2.92f, 3.16f};
 
     //IIR Filter Bank
     const int numResonators = 6;
     std::vector<juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>>> filterBank;
     std::vector<juce::AudioBuffer<float>> bufferBank;
-    std::vector<double> freqBank;
-    std::vector<double> resBank;
+    //std::vector<double> resBank;
     std::vector<juce::dsp::Gain<float>> gainBank;
 
 
+    //Helper func
+    float basicLerp(float a, float b, float t);
 };
+

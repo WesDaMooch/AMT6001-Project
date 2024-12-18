@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "StyleSheet.h"
 
 //==============================================================================
 /**
@@ -30,11 +31,17 @@ private:
 
     ReSoundAudioProcessor& audioProcessor;
 
+    juce::CustomLookAndFeel myCustomLookAndFeel;
+
     //Replace With DECAY
     juce::Label resonanceLabel;
     juce::Slider resonanceSlider; 
 
+    juce::Label spreadLabel;
+    juce::Slider spreadSlider;
 
+    juce::Label shapeLabel;
+    juce::Slider shapeSlider;
 
     juce::MidiKeyboardState keyboardState;          //midi keyboard in standalone
     juce::MidiKeyboardComponent keyboardComponent;  //the keyboard UI

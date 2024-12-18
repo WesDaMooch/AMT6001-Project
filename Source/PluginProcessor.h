@@ -57,6 +57,8 @@ public:
 
     juce::MidiMessageCollector& getMidiMessageCollector();
     void setRes(double newRes); 
+    void setSpread(double newSpread);
+    void setShape(double newShape);
 
 
 private:
@@ -65,8 +67,10 @@ private:
 
     juce::MidiMessageCollector midiMessageCollector;
     
-    //make hmm
-    double res = 0.1f; 
+    //have defaults here?
+    double res; 
+    double spread; 
+    double shape;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ReSoundAudioProcessor)
 };

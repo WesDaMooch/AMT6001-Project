@@ -197,6 +197,8 @@ void ReSoundAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
             //set first reson freq with midi
             voice->setFundamentalFreq(fundimentalFreq);
             voice->setFundamentalRes(res);
+            voice->setSpread(spread);
+            voice->setShape(shape);
         }
     }
 
@@ -241,7 +243,19 @@ juce::MidiMessageCollector& ReSoundAudioProcessor::getMidiMessageCollector()
     return midiMessageCollector;
 }
 
+//==============================================================================
+//Param setters
 void ReSoundAudioProcessor::setRes(double newRes)
 {
     res = newRes; 
+}
+
+void ReSoundAudioProcessor::setSpread(double newSpread)
+{
+    spread = newSpread;
+}
+
+void ReSoundAudioProcessor::setShape(double newShape)
+{
+    shape = newShape;
 }

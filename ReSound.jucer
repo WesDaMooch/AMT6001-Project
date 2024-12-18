@@ -5,6 +5,8 @@
               pluginVST3Category="Instrument">
   <MAINGROUP id="YKiEcm" name="ReSound">
     <GROUP id="{C66E7FCF-C0E0-40D1-3770-88ABCD12BDEB}" name="Source">
+      <FILE id="b2NlnM" name="StyleSheet.cpp" compile="1" resource="0" file="Source/StyleSheet.cpp"/>
+      <FILE id="bJmRWx" name="StyleSheet.h" compile="0" resource="0" file="Source/StyleSheet.h"/>
       <FILE id="d95K9h" name="SynthSound.cpp" compile="1" resource="0" file="Source/SynthSound.cpp"/>
       <FILE id="GKkR6B" name="SynthSound.h" compile="0" resource="0" file="Source/SynthSound.h"/>
       <FILE id="I10ebi" name="SynthVoice.cpp" compile="1" resource="0" file="Source/SynthVoice.cpp"/>

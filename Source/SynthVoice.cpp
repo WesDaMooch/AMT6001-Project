@@ -5,14 +5,18 @@
 //Initalise Resonant Filters
 SynthVoice::SynthVoice()//:fundamentalResonator(juce::dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, fundimentalFreq, fundimentalRes))
 {   
-    gain.setGainLinear(1.0f);
+    shape = 0;
+    spread = 1;
+
+    fundimentalFreq = 130;
+    fundimentalRes = 200;
 
     //move this if I want to make numResonators a param
     filterBank.resize(numResonators);
     bufferBank.resize(numResonators);
-    freqBank.resize(numResonators);
-    resBank.resize(numResonators);
     gainBank.resize(numResonators);
+    for (auto i = 0; i < numResonators; i++)
+        gainBank[i].setGainLinear(1.0f);
 }
 
 bool SynthVoice::canPlaySound(juce::SynthesiserSound* sound)
@@ -29,7 +33,7 @@ void SynthVoice::startNote(int midiNoteNumber, float velocity, juce::Synthesiser
     updateFundamentalResonator();
 
     //Set the gain to resonance, rudimentary scaling
-    gain.setGainLinear(fundimentalRes*0.5f);
+    //gain.setGainLinear(fundimentalRes*0.5f);
 }
 
 void SynthVoice::stopNote(float velocity, bool allowTailOff)
@@ -92,8 +96,7 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
     {
         juce::dsp::AudioBlock<float> block(bufferBank[i]);
         filterBank[i].process(juce::dsp::ProcessContextReplacing<float>(block));
-        gain.process(juce::dsp::ProcessContextReplacing<float>(block));
-        //gainBank[i].process...
+        gainBank[i].process(juce::dsp::ProcessContextReplacing<float>(block));
     }
 
     //Mix bufferBank to outputBuffer
@@ -137,25 +140,72 @@ void SynthVoice::reset()
     }
 }
 
-void SynthVoice::updateFundamentalResonator()
+void SynthVoice::updateFundamentalResonator() //change name to updateResonators
 {
     //ArrayCoefficients does not allocate memory and Coefficients does...
-    
-    *filterBank[0].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate,
-                            fundimentalFreq, fundimentalRes);
-    *filterBank[1].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate,
-                            fundimentalFreq * 1.8f, fundimentalRes);
-    *filterBank[2].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate,
-                            fundimentalFreq, fundimentalRes);
-    *filterBank[3].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate,
-                            fundimentalFreq * 3.5f, fundimentalRes);
-    *filterBank[4].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate,
-                            fundimentalFreq * 2.6, fundimentalRes);
-    *filterBank[5].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate,
-                            fundimentalFreq * 4.2f, fundimentalRes);
+
+    //CRASH IF SHAPE IS NOT MOVED, NOT INITED PROPERLY?
+
+    auto prevHarmonicRatio = 1;
+    for (auto i = 0; i < numResonators; i++)
+    {
+
+        float freq;
+        float q;
+        int gainOn = 1;
+
+        if (i < 1)
+        {
+            //Tread fundimental resinator differently
+            freq = fundimentalFreq;
+            if (freq > sampleRate * 0.5 || freq < 20.0f)
+            {
+                //if freq is higher than niqust set gain to 0
+                freq = 440;     //set to arbitrary value, resinator is muted anyway
+                gainOn = 0;
+            }
+
+            q = fundimentalRes;
+            *filterBank[0].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate, freq, q);
+        }
+        else
+        {
+
+            //no lerp in my version of c++?
+            //auto harmonicRatio = std::lerp((int(prevHarmonicRatio) * spread), (prevHarmonicRatio * circularModes[i]), shape);
+
+            float squareHarmonicRatio = int(prevHarmonicRatio * spread);    //truncate to only get harmoic ratios
+            float circularHarmonicRatio = (prevHarmonicRatio * spread) * circularModes[i];
+
+            //shape is a negative number when dial has not been used HOW!
+            //quick fix
+            if (shape < 0)
+                shape = 0;
+
+            auto harmonicRatio = basicLerp(circularHarmonicRatio, squareHarmonicRatio, shape);
+
+            freq = harmonicRatio * fundimentalFreq;
+            if (freq > sampleRate * 0.5 || freq < 20.0f)
+            {
+                //maybe if they exceed niquit they get refected
+                //aliasing on perpose?!??!
+                freq = 440;  
+                gainOn = 0;
+            }
+
+            q = fundimentalRes;
+            *filterBank[i].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate, freq, q);
+
+            prevHarmonicRatio = harmonicRatio;
+        }
+
+        //Set gain
+        gainBank[i].setGainLinear(q * 0.5 * gainOn);
+    }
 }
 
-
+//==============================================================================
+//Setters
 void SynthVoice::setFundamentalFreq(double newFundimentalFreq)
 {
     if (newFundimentalFreq < 20.0f)
@@ -167,4 +217,21 @@ void SynthVoice::setFundamentalFreq(double newFundimentalFreq)
 void SynthVoice::setFundamentalRes(double newFundimentalRes)
 {
     fundimentalRes = newFundimentalRes; 
+}
+
+void SynthVoice::setSpread(double newSpread)
+{
+    spread = newSpread;
+}
+
+void SynthVoice::setShape(double newShape)
+{
+    shape = newShape;
+}
+
+float SynthVoice::basicLerp(float a, float b, float t)
+{
+    //basic linear interpreter
+    auto output = (a * (1.0f - t)) + (b * t);
+    return output;
 }
