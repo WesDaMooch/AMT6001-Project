@@ -59,7 +59,8 @@ public:
     void setRes(double newRes); 
     void setSpread(double newSpread);
     void setShape(double newShape);
-
+    void setAttack(double newAttack);
+    void setRelease(double newRelease);
 
 private:
     //==============================================================================
@@ -69,8 +70,10 @@ private:
     
     //have defaults here?
     double res; 
-    double spread; 
-    double shape;
+    double spread = 1; 
+    double shape = 0;
+    double attack = 1;
+    double release = 1;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ReSoundAudioProcessor)
 };

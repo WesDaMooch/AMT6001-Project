@@ -33,6 +33,12 @@ private:
 
     juce::CustomLookAndFeel myCustomLookAndFeel;
 
+    juce::Slider attackSlider;
+    juce::Slider releaseSlider;
+
+    juce::Label pitchLabel;
+    juce::Slider pitchSlider;
+
     //Replace With DECAY
     juce::Label resonanceLabel;
     juce::Slider resonanceSlider; 

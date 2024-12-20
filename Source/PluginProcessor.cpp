@@ -12,7 +12,7 @@
 
 namespace Constants
 {
-    const int num_voices = 3;
+    const int num_voices = 16;
 }
 
 //==============================================================================
@@ -196,6 +196,10 @@ void ReSoundAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
             //sets
             //set first reson freq with midi
             voice->setFundamentalFreq(fundimentalFreq);
+
+            voice->setExciterAttack(attack);
+            voice->setExciterRelease(release);
+            
             voice->setFundamentalRes(res);
             voice->setSpread(spread);
             voice->setShape(shape);
@@ -245,17 +249,8 @@ juce::MidiMessageCollector& ReSoundAudioProcessor::getMidiMessageCollector()
 
 //==============================================================================
 //Param setters
-void ReSoundAudioProcessor::setRes(double newRes)
-{
-    res = newRes; 
-}
-
-void ReSoundAudioProcessor::setSpread(double newSpread)
-{
-    spread = newSpread;
-}
-
-void ReSoundAudioProcessor::setShape(double newShape)
-{
-    shape = newShape;
-}
+void ReSoundAudioProcessor::setRes(double newRes) { res = newRes; }
+void ReSoundAudioProcessor::setSpread(double newSpread) { spread = newSpread; }
+void ReSoundAudioProcessor::setShape(double newShape) { shape = newShape; }
+void ReSoundAudioProcessor::setAttack(double newAttack) { attack = newAttack; }
+void ReSoundAudioProcessor::setRelease(double newRelease) { release = newRelease; }

@@ -32,8 +32,10 @@ void SynthVoice::startNote(int midiNoteNumber, float velocity, juce::Synthesiser
     //make this except midi number? - updateFundamentalResonator(midiNoteNumber)
     updateFundamentalResonator();
 
-    //Set the gain to resonance, rudimentary scaling
-    //gain.setGainLinear(fundimentalRes*0.5f);
+    //dont like this rly, pass the exciter through a filter maybe to get more interesting shapes
+    //exciterShape.setAttackTime(exciterAttack)
+    //exciterShape.setReleaseTime(e);
+
 }
 
 void SynthVoice::stopNote(float velocity, bool allowTailOff)
@@ -79,8 +81,12 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
         }
     }
     
+
     //Apply Exciter Env
     exciter.applyEnvelopeToBuffer(baseBuffer, 0, numSamples);
+
+    juce::dsp::AudioBlock<float> exciterBlock(baseBuffer);
+    exciterShape.process(juce::dsp::ProcessContextReplacing<float>(exciterBlock));
 
 
     //Copy Exciter in baseBuffer to other buffers - could do thos above
@@ -118,9 +124,10 @@ void SynthVoice::prepare(const juce::dsp::ProcessSpec& spec)
 {
     sampleRate = spec.sampleRate; 
 
+    //Very short click impulse
     exciter.setSampleRate(sampleRate);
-    exciter.setParameters(juce::ADSR::Parameters(0.001f, 0.01f, 0, 0));
-    //exciter.setParameters(juce::ADSR::Parameters(0.001f, 1.0f, 0, 0));
+    exciter.setParameters(juce::ADSR::Parameters(exciterAttack, exciterRelease, 0, 0));
+    exciterShape.prepare(spec);
 
     for (auto i = 0; i < numResonators; i++)
     {
@@ -133,6 +140,7 @@ void SynthVoice::prepare(const juce::dsp::ProcessSpec& spec)
 void SynthVoice::reset()
 {
     exciter.reset();
+    exciterShape.reset();
 
     for (auto i = 0; i < numResonators; i++)
     {
@@ -142,10 +150,7 @@ void SynthVoice::reset()
 
 void SynthVoice::updateFundamentalResonator() //change name to updateResonators
 {
-    //ArrayCoefficients does not allocate memory and Coefficients does...
-
-    //CRASH IF SHAPE IS NOT MOVED, NOT INITED PROPERLY?
-
+    //update filters
     auto prevHarmonicRatio = 1;
     for (auto i = 0; i < numResonators; i++)
     {
@@ -166,6 +171,7 @@ void SynthVoice::updateFundamentalResonator() //change name to updateResonators
             }
 
             q = fundimentalRes;
+            //ArrayCoefficients does not allocate memory and Coefficients does...
             *filterBank[0].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate, freq, q);
         }
         else
@@ -174,13 +180,13 @@ void SynthVoice::updateFundamentalResonator() //change name to updateResonators
             //no lerp in my version of c++?
             //auto harmonicRatio = std::lerp((int(prevHarmonicRatio) * spread), (prevHarmonicRatio * circularModes[i]), shape);
 
-            float squareHarmonicRatio = int(prevHarmonicRatio * spread);    //truncate to only get harmoic ratios
-            float circularHarmonicRatio = (prevHarmonicRatio * spread) * circularModes[i];
+            float squareHarmonicRatio = int(prevHarmonicRatio * (spread+1));    //truncate to only get harmoic ratios
+            float circularHarmonicRatio = (prevHarmonicRatio * spread) * circularModes[i-1];
 
             //shape is a negative number when dial has not been used HOW!
             //quick fix
-            if (shape < 0)
-                shape = 0;
+            //if (shape < 0)
+                //shape = 0;
 
             auto harmonicRatio = basicLerp(circularHarmonicRatio, squareHarmonicRatio, shape);
 
@@ -202,6 +208,9 @@ void SynthVoice::updateFundamentalResonator() //change name to updateResonators
         //Set gain
         gainBank[i].setGainLinear(q * 0.5 * gainOn);
     }
+
+    // Update exciter
+    exciter.setParameters(juce::ADSR::Parameters(exciterAttack*0.001, exciterRelease*0.001, 0, 0));
 }
 
 //==============================================================================
@@ -213,21 +222,11 @@ void SynthVoice::setFundamentalFreq(double newFundimentalFreq)
 
     fundimentalFreq = newFundimentalFreq; 
 }
-
-void SynthVoice::setFundamentalRes(double newFundimentalRes)
-{
-    fundimentalRes = newFundimentalRes; 
-}
-
-void SynthVoice::setSpread(double newSpread)
-{
-    spread = newSpread;
-}
-
-void SynthVoice::setShape(double newShape)
-{
-    shape = newShape;
-}
+void SynthVoice::setFundamentalRes(double newFundimentalRes) { fundimentalRes = newFundimentalRes; }
+void SynthVoice::setSpread(double newSpread) { spread = newSpread; }
+void SynthVoice::setShape(double newShape) { shape = newShape; }
+void SynthVoice::setExciterAttack(double newExciterAttack) { exciterAttack = newExciterAttack; }
+void SynthVoice::setExciterRelease(double newExciterRelease) { exciterRelease = newExciterRelease; }
 
 float SynthVoice::basicLerp(float a, float b, float t)
 {
