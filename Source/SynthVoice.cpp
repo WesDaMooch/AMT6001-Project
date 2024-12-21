@@ -76,17 +76,20 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
 
         for (auto sampleIndex = 0; sampleIndex < baseBuffer.getNumSamples(); sampleIndex++)
         {
-            *(channelData + sampleIndex) = 1;
-            //*(channelData + sampleIndex) = exciter.getNextSample();
+            float noise = randomFloat.nextFloat(); // White noise 0 - 1
+            float noiseAttenuation = ((exciterNoiseAmount * 0.5f) - 1.0f) * -1.0f;
+
+            *(channelData + sampleIndex) = ((noise * exciterNoiseAmount) + 1) * noiseAttenuation;
+            //*(channelData + sampleIndex) = 1;
         }
     }
     
-
     //Apply Exciter Env
     exciter.applyEnvelopeToBuffer(baseBuffer, 0, numSamples);
+    
 
-    juce::dsp::AudioBlock<float> exciterBlock(baseBuffer);
-    exciterShape.process(juce::dsp::ProcessContextReplacing<float>(exciterBlock));
+    //juce::dsp::AudioBlock<float> exciterBlock(baseBuffer); //maybe this kinda thing for punch env
+   // exciterShape.process(juce::dsp::ProcessContextReplacing<float>(exciterBlock));
 
 
     //Copy Exciter in baseBuffer to other buffers - could do thos above
@@ -227,6 +230,7 @@ void SynthVoice::setSpread(double newSpread) { spread = newSpread; }
 void SynthVoice::setShape(double newShape) { shape = newShape; }
 void SynthVoice::setExciterAttack(double newExciterAttack) { exciterAttack = newExciterAttack; }
 void SynthVoice::setExciterRelease(double newExciterRelease) { exciterRelease = newExciterRelease; }
+void SynthVoice::setExciterNoiseAmount(double newExciterNoiseAmount) { exciterNoiseAmount = newExciterNoiseAmount; }
 
 float SynthVoice::basicLerp(float a, float b, float t)
 {

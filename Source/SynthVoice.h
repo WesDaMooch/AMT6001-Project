@@ -28,6 +28,7 @@ public:
     void setShape(double newShape);
     void setExciterAttack(double newExciterAttack);
     void setExciterRelease(double newExciterRelease);
+    void setExciterNoiseAmount(double newExciterNoiseAmount);
 
 private:
 
@@ -36,7 +37,7 @@ private:
     juce::ADSR exciter;
 
     double fundimentalFreq = 130;
-    double fundimentalRes = 200;
+    double fundimentalRes = 200; //this will be decay soon
 
     //Params
     //HARMO 1 - numResonators (6)
@@ -44,8 +45,11 @@ private:
     double spread = 1;
     double shape = 0;
 
-    double exciterAttack = 1; //in ms (*0.001 for s)
-    double exciterRelease = 1;
+    // Exciter
+    double exciterAttack = 1.0f; //in ms (*0.001 for s)
+    double exciterRelease = 1.0f;
+    double exciterNoiseAmount = 0.0f;
+    juce::Random randomFloat;
 
     //maybe use this for punch env?
     juce::dsp::BallisticsFilter<float> exciterShape; 
@@ -53,7 +57,7 @@ private:
     //Vibrational modes of a circular membrane
     //after Berg and Stork - who dis?
     //is there a way of calulating nth mode - wave equation help
-    std::array<float, 5> circularModes = {1.59f, 2.14f, 2.3f, 2.65f, 2.92f};
+    std::array<float, 5> circularModes = {1.59f, 2.14f, 2.3f, 2.65f, 2.92f}; //add 12 or 16
 
     //IIR Filter Bank
     const int numResonators = 6;

@@ -26,6 +26,7 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
+
 private:
     void sliderValueChanged(juce::Slider* slider) override;
 
@@ -33,24 +34,26 @@ private:
 
     juce::CustomLookAndFeel myCustomLookAndFeel;
 
+    //get rid of the labels
+
+    // Exciter pramas
     juce::Slider attackSlider;
     juce::Slider releaseSlider;
-
-    juce::Label pitchLabel;
-    juce::Slider pitchSlider;
+    juce::Slider exciterNoiseAmountSlider;
+    juce::Slider punchAmountSlider;
+;
 
     //Replace With DECAY
-    juce::Label resonanceLabel;
+    juce::Slider harmoSlider;
     juce::Slider resonanceSlider; 
-
-    juce::Label spreadLabel;
     juce::Slider spreadSlider;
-
-    juce::Label shapeLabel;
     juce::Slider shapeSlider;
+    juce::Slider pitchSlider;
 
     juce::MidiKeyboardState keyboardState;          //midi keyboard in standalone
     juce::MidiKeyboardComponent keyboardComponent;  //the keyboard UI
+
+
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ReSoundAudioProcessorEditor)
 };

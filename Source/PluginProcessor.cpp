@@ -178,7 +178,8 @@ void ReSoundAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
             juce::MidiMessage message = metadata.getMessage();
             if (message.isNoteOn())
             {
-                fundimentalFreq = message.getMidiNoteInHertz(message.getNoteNumber());
+                int midiNote = message.getNoteNumber() + pitchOffset;
+                fundimentalFreq = message.getMidiNoteInHertz(midiNote);
                 break;
             }
         }
@@ -199,6 +200,7 @@ void ReSoundAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
 
             voice->setExciterAttack(attack);
             voice->setExciterRelease(release);
+            voice->setExciterNoiseAmount(exciterNoiseAmount);
             
             voice->setFundamentalRes(res);
             voice->setSpread(spread);
@@ -252,5 +254,9 @@ juce::MidiMessageCollector& ReSoundAudioProcessor::getMidiMessageCollector()
 void ReSoundAudioProcessor::setRes(double newRes) { res = newRes; }
 void ReSoundAudioProcessor::setSpread(double newSpread) { spread = newSpread; }
 void ReSoundAudioProcessor::setShape(double newShape) { shape = newShape; }
+void ReSoundAudioProcessor::setPitchOffset(double newPitchOffset) { pitchOffset = newPitchOffset; }
+
 void ReSoundAudioProcessor::setAttack(double newAttack) { attack = newAttack; }
 void ReSoundAudioProcessor::setRelease(double newRelease) { release = newRelease; }
+void ReSoundAudioProcessor::setExciterNoiseAmount(double newExciterNoiseAmount) { exciterNoiseAmount = newExciterNoiseAmount; }
+

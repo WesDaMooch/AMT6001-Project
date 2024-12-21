@@ -50,14 +50,18 @@ namespace customColours
 namespace gridUI
 {
     const float columnOne = 40;
-    const float columnTwo = 100;
-
+    const float columnTwo = columnOne + 60;
+    const float columnThree = 210;
+    const float columnFour = columnThree + 60;
+    const float columnFive = columnFour + 60;
+    
+    const float rowZero = 20;
     const float rowOne = 100;
-
-
+    const float rowTwo = 300;
+    const float rowThree = rowTwo + 60;
 }
 
-
+//maybe remove
 void styleDial(juce::Slider& slider, double minRange, double maxRange, double defaultValue,
     double interval=0, bool textBox=false)
 {   
@@ -80,8 +84,6 @@ void styleVerticalSlider(juce::Slider& slider, double minRange, double maxRange,
 {
     //this could be put in CustomLookAndFeel
     slider.setSliderStyle(juce::Slider::LinearVertical);
-    //slider.setColour(juce::Slider::ColourIds::rotarySliderOutlineColourId, customColours::eerieBlack);
-    //slider.setColour(juce::Slider::ColourIds::rotarySliderFillColourId, customColours::eerieBlack);
     slider.setColour(juce::Slider::ColourIds::trackColourId, customColours::coquelicot);
     slider.setColour(juce::Slider::ColourIds::thumbColourId, customColours::gray33);
     slider.setColour(juce::Slider::ColourIds::backgroundColourId, customColours::eerieBlack);
@@ -90,60 +92,99 @@ void styleVerticalSlider(juce::Slider& slider, double minRange, double maxRange,
     slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 90, 0);
 }
 
-void styleHorizontalSlider(juce::Slider& slider, double minRange, double maxRange, double defaultValue)
+void styleHorizontalSlider(juce::Slider& slider, double minRange, double maxRange, double defaultValue,
+    double interval = 0)
 {
-    //this could be put in CustomLookAndFeel
     slider.setSliderStyle(juce::Slider::LinearHorizontal);
-    slider.setColour(juce::Slider::ColourIds::rotarySliderOutlineColourId, juce::Colour(43, 47, 59));
-    slider.setColour(juce::Slider::ColourIds::rotarySliderFillColourId, juce::Colour(27, 161, 132));
-    slider.setColour(juce::Slider::ColourIds::thumbColourId, juce::Colour(27, 161, 132));
-    slider.setRange(minRange, maxRange);
+    slider.setColour(juce::Slider::ColourIds::trackColourId, customColours::eerieBlack);
+    slider.setColour(juce::Slider::ColourIds::thumbColourId, customColours::gray33);
+    slider.setColour(juce::Slider::ColourIds::backgroundColourId, customColours::eerieBlack);
+    slider.setRange(minRange, maxRange, interval);
     slider.setValue(defaultValue);
     slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 90, 0);
 }
 
 
-void styleLabel(juce::Label& label, const juce::String name)
-{
-    label.setColour(juce::Label::textColourId, customColours::jet);
-    auto font = label.getFont();
-    font.setSizeAndStyle(font.getHeight(), "Arial", 1.0f, 0.0f);
-    //font.setBold(true);
-    //font.setItalic(true);
-    label.setFont(font);
-    label.setJustificationType(juce::Justification::centred);
-    //label.setTransform(juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, 0.5 * label.getHeight(), 0.5 * label.getWidth()));
-    //90 degrees in radians = pi/2
-    //label.setTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi));
-
-    label.setText(name, juce::dontSendNotification);
-    
-}
-
 void drawVerticalLabel(juce::Graphics& g, juce::Font font, juce::Colour colour,
-    const juce::String name, float targetSliderX, float targetSliderY)
+    const juce::String name, float targetSliderX, float targetSliderY, double value, float scale=1)
 {
     //draw a vertical label for slider
 
-    float fontWidth = font.getStringWidthFloat(name);
-    float fontPadding = 5.0f;
+    auto sliderSize = 133; 
 
-    float x = targetSliderX; // +fontPadding;
-    float y = targetSliderY; //+ fontWidth;
-    //float y = 355;
+    //the scale thing is not that good, how to round to decimal places in c++
+    value = juce::roundDoubleToInt(value * scale);
+
+    juce::String valueString = std::to_string(int(value));
+    float valueWidth = juce::Font().getStringWidthFloat(valueString);
+
+    float fontWidth = font.getStringWidthFloat(name);
+    float fontPadding = 35.0f;
+
+    float x = targetSliderX + fontPadding;
+    float y = targetSliderY + fontWidth + 12.0f;
+
+    float valueX = x + sliderSize - valueWidth;
+    float valueY = y;
 
     juce::GlyphArrangement ga;
-    ga.addLineOfText(font, name, x, y);     
+    ga.addLineOfText(font, name, x, y);
+    ga.addLineOfText(font, valueString, valueX, valueY);
     juce::Path p;
     ga.createPath(p);
 
     auto pathBounds = p.getBounds();
 
     p.applyTransform(juce::AffineTransform().rotated(juce::MathConstants<float>::halfPi,
-        pathBounds.getCentreX(), pathBounds.getCentreY()));
-    
+        pathBounds.getCentreX(), pathBounds.getCentreY() - fontWidth / 2));
+
+
+    ga.addLineOfText(font, valueString, valueX, valueY);
+    juce::Path p2;
+    ga.createPath(p2);
+
+    auto pathBounds2 = p2.getBounds();
+
+    p2.applyTransform(juce::AffineTransform().rotated(juce::MathConstants<float>::halfPi,
+        pathBounds2.getCentreX(), pathBounds2.getCentreY() - fontWidth / 2));
+
     g.setColour(colour);
     g.fillPath(p);
+
+
+}
+
+void drawHorizontalLabel(juce::Graphics& g, juce::Font font, juce::Colour colour,
+    const juce::String name, float targetSliderX, float targetSliderY, double value, float scale=1)
+{
+    //draw a vertical label for slider
+    auto sliderSize = 133; // get this from somewhere, put in gridUI?
+
+    value = juce::roundDoubleToInt(value * scale);
+
+    juce::String valueString = std::to_string(int(value));
+    float valueWidth = juce::Font().getStringWidthFloat(valueString);
+
+    float fontWidth = font.getStringWidthFloat(name);
+    float fontPadding = 10.0f;
+
+    float x = targetSliderX + 5.0f;
+    float y = targetSliderY - fontPadding;
+
+    float valueX = x + sliderSize - valueWidth;
+    float valueY = y;
+
+    juce::GlyphArrangement ga;
+    ga.addLineOfText(font, name, x, y);
+    ga.addLineOfText(font, valueString, valueX, valueY);
+    
+    juce::Path p;
+    ga.createPath(p);
+    auto pathBounds = p.getBounds();
+
+    g.setColour(colour);
+    g.fillPath(p);
+
 }
 
 //==============================================================================
@@ -164,46 +205,43 @@ ReSoundAudioProcessorEditor::ReSoundAudioProcessorEditor (ReSoundAudioProcessor&
     addAndMakeVisible(&keyboardComponent);
     keyboardState.addListener(&audioProcessor.getMidiMessageCollector());
 
-
+    // Exciter Attack
     styleVerticalSlider(attackSlider, 0.1f, 10.0f, 1.0f); //in ms
     attackSlider.addListener(this);
     addAndMakeVisible(&attackSlider);
-
+    // Exciter Release
     styleVerticalSlider(releaseSlider, 0.1f, 100.0f, 1.0f); 
     releaseSlider.addListener(this);
     addAndMakeVisible(&releaseSlider);
+    // Exciter Noise Amount
+    styleVerticalSlider(exciterNoiseAmountSlider, 0.0f, 1.0f, 0.0f);
+    exciterNoiseAmountSlider.addListener(this);
+    addAndMakeVisible(&exciterNoiseAmountSlider);
+    // Punch Amount
+    styleVerticalSlider(punchAmountSlider, 0.0f, 1.0f, 0.0f);
+    punchAmountSlider.addListener(this);
+    addAndMakeVisible(&punchAmountSlider);
 
-    styleLabel(pitchLabel, "PITCH");
-    addAndMakeVisible(&pitchLabel);
-    styleVerticalSlider(pitchSlider, -12, 12, 0, 1); 
-    pitchSlider.addListener(this);
-    addAndMakeVisible(&pitchSlider);
-
-    styleLabel(resonanceLabel, "RES");
-    addAndMakeVisible(&resonanceLabel);
+    //Harmo Amount
+    styleVerticalSlider(harmoSlider, 1, 6, 6, 1);
+    harmoSlider.addListener(this);
+    addAndMakeVisible(&harmoSlider);
+    // Res
     styleVerticalSlider(resonanceSlider, 1, 300, 100);
     resonanceSlider.addListener(this); 
     addAndMakeVisible(&resonanceSlider);
-
-
+    // Spread Amount
     styleVerticalSlider(spreadSlider, 1, 3, 1);
     spreadSlider.addListener(this);
     addAndMakeVisible(&spreadSlider);
-
-    styleLabel(spreadLabel, "SPREAD");
-    spreadLabel.attachToComponent(&spreadSlider, false); 
-    addAndMakeVisible(&spreadLabel);
-
-
+    // Shape
     styleHorizontalSlider(shapeSlider, 0, 1, 0);
     shapeSlider.addListener(this);
     addAndMakeVisible(&shapeSlider);
-
-    styleLabel(shapeLabel, "SHAPE");
-    shapeLabel.attachToComponent(&shapeSlider, false);
-    addAndMakeVisible(&shapeLabel);
-
-
+    // Pitch Offset
+    styleHorizontalSlider(pitchSlider, -12, 12, 0, 1);
+    pitchSlider.addListener(this);
+    addAndMakeVisible(&pitchSlider);
 }
 
 ReSoundAudioProcessorEditor::~ReSoundAudioProcessorEditor()
@@ -224,26 +262,51 @@ void ReSoundAudioProcessorEditor::paint (juce::Graphics& g)
     
     g.setColour(customColours::isabelline);
     auto window = getBounds().toFloat();
+
+    auto rectOneSize = 140.0f;
+    auto rectTwoSize = 200.0f;
+
     auto rectTopPadding = 25.0f;
     auto rectBottomPadding = 120.0f;
     auto rectLeftPadding = 25.0f;
     auto rectCornerSize = 10.0f;
-    g.fillRoundedRectangle(rectLeftPadding, rectTopPadding, window.getWidth() / 4,
+    g.fillRoundedRectangle(rectLeftPadding, rectTopPadding, rectOneSize,
         window.getHeight() - rectBottomPadding, rectCornerSize);
 
 
-    g.fillRoundedRectangle((window.getWidth() / 4) + rectLeftPadding * 2, rectTopPadding, window.getWidth() / 4,
+    g.fillRoundedRectangle(rectOneSize + rectLeftPadding * 2, rectTopPadding, rectTwoSize,
         window.getHeight() - rectBottomPadding, rectCornerSize);
 
-    juce::Font font = juce::Font("Arial", 22.0f, juce::Font::bold);
-
+    // Draw Labels
+    juce::Font font = juce::Font("Futura", 22.0f, juce::Font::bold);
     juce::Colour fontColour = juce::Colours::grey;
 
     drawVerticalLabel(g, font, fontColour, juce::String("ATTACK"),
-        gridUI::columnOne, gridUI::rowOne);
+        gridUI::columnOne, gridUI::rowOne, attackSlider.getValue());
 
     drawVerticalLabel(g, font, fontColour, juce::String("RELEASE"),
-        gridUI::columnTwo, gridUI::rowOne);
+        gridUI::columnTwo, gridUI::rowOne, releaseSlider.getValue());
+
+    drawVerticalLabel(g, font, fontColour, juce::String("NOISE"),
+        gridUI::columnOne, gridUI::rowTwo, exciterNoiseAmountSlider.getValue(), 100);
+
+    drawVerticalLabel(g, font, fontColour, juce::String("PUNCH"),
+        gridUI::columnTwo, gridUI::rowTwo, punchAmountSlider.getValue(), 100);
+
+    drawVerticalLabel(g, font, fontColour, juce::String("HARMO"),
+        gridUI::columnThree, gridUI::rowOne, harmoSlider.getValue());
+
+    drawVerticalLabel(g, font, fontColour, juce::String("RES"),
+        gridUI::columnFour, gridUI::rowOne, resonanceSlider.getValue());
+
+    drawVerticalLabel(g, font, fontColour, juce::String("SPREAD"),
+        gridUI::columnFive, gridUI::rowOne, spreadSlider.getValue());
+
+    drawHorizontalLabel(g, font, fontColour, juce::String("SHAPE"),
+        gridUI::columnThree, gridUI::rowTwo, shapeSlider.getValue(), 100);
+
+    drawHorizontalLabel(g, font, fontColour, juce::String("PITCH"),
+        gridUI::columnThree, gridUI::rowThree, pitchSlider.getValue());
 }
 
 void ReSoundAudioProcessorEditor::resized()
@@ -260,33 +323,46 @@ void ReSoundAudioProcessorEditor::resized()
 
     auto labelHeight = 30;
 
-    auto rowOne = 100;
-
-    auto rowTwo = 300;
-
-
+    // Exciter
     attackSlider.setBounds(gridUI::columnOne, gridUI::rowOne,
         verticalSliderWidth, verticalSliderHeight);
 
     releaseSlider.setBounds(gridUI::columnTwo, gridUI::rowOne,
         verticalSliderWidth, verticalSliderHeight);
 
-    //pitchSlider.setBounds(columnOne, rowTwo, verticalSliderWidth, verticalSliderHeight);
+    exciterNoiseAmountSlider.setBounds(gridUI::columnOne, gridUI::rowTwo,
+        verticalSliderWidth, verticalSliderHeight);
 
-    //resonanceSlider.setBounds(columnOne*2, rowOne, verticalSliderWidth, verticalSliderHeight);
-    //resonanceLabel.setBounds(columnOne * 2, rowOne + verticalSliderHeight, 100, 100);
+    punchAmountSlider.setBounds(gridUI::columnTwo, gridUI::rowTwo,
+        verticalSliderWidth, verticalSliderHeight);
 
-    //spreadSlider.setBounds(columnTwo, rowOne, verticalSliderWidth, verticalSliderHeight);
+    // Resonant Body
+    harmoSlider.setBounds(gridUI::columnThree, gridUI::rowOne,
+        verticalSliderWidth, verticalSliderHeight);
 
-    //shapeSlider.setBounds(200, 300, horizontalSliderWidth, horizontalSliderHeight);
+    resonanceSlider.setBounds(gridUI::columnFour, gridUI::rowOne,
+        verticalSliderWidth, verticalSliderHeight);
+
+    spreadSlider.setBounds(gridUI::columnFive, gridUI::rowOne,
+        verticalSliderWidth, verticalSliderHeight);
+
+    shapeSlider.setBounds(gridUI::columnThree, gridUI::rowTwo,
+        horizontalSliderWidth, horizontalSliderHeight);
+
+    pitchSlider.setBounds(gridUI::columnThree, gridUI::rowThree,
+        horizontalSliderWidth, horizontalSliderHeight);
 }
 
 void ReSoundAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
-    if (slider == &resonanceSlider)
+    if (slider == &harmoSlider)
     {
-        //editor -> processor -> voice
-        //make a better way of doing this?  
+            //editor -> processor -> voice
+            //make a better way of doing this?  
+            //audioProcessor.setHarmonics(slider->getValue());
+    }
+    else if (slider == &resonanceSlider)
+    { 
         audioProcessor.setRes(slider->getValue());
     }
     else if (slider == &spreadSlider)
@@ -297,6 +373,10 @@ void ReSoundAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     {
         audioProcessor.setShape(slider->getValue());
     }
+    else if (slider == &pitchSlider)
+    {
+        audioProcessor.setPitchOffset(slider->getValue());
+    }
     else if (slider == &attackSlider)
     {
         audioProcessor.setAttack(slider->getValue());
@@ -305,4 +385,15 @@ void ReSoundAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     {
         audioProcessor.setRelease(slider->getValue());
     }
+    else if (slider == &exciterNoiseAmountSlider)
+    {
+        audioProcessor.setExciterNoiseAmount(slider->getValue());
+    }
+    else if (slider == &punchAmountSlider)
+    {
+        //audioProcessor.setPunchAmount(slider->getValue());
+    }
+
+    // Repaint UI if slider value change
+    repaint();
 }

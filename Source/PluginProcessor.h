@@ -59,8 +59,11 @@ public:
     void setRes(double newRes); 
     void setSpread(double newSpread);
     void setShape(double newShape);
+    void setPitchOffset(double newPitchOffset);
+
     void setAttack(double newAttack);
     void setRelease(double newRelease);
+    void setExciterNoiseAmount(double newExciterNoiseAmount);
 
 private:
     //==============================================================================
@@ -72,8 +75,11 @@ private:
     double res; 
     double spread = 1; 
     double shape = 0;
-    double attack = 1;
-    double release = 1;
+    int pitchOffset = 0;
+
+    double attack = 1; //rename exciterAttack
+    double release = 1; 
+    double exciterNoiseAmount = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ReSoundAudioProcessor)
 };
