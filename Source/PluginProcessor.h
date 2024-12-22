@@ -57,6 +57,7 @@ public:
 
     juce::MidiMessageCollector& getMidiMessageCollector();
     void setRes(double newRes); 
+    void setHarmonics(double newHarmonics);
     void setSpread(double newSpread);
     void setShape(double newShape);
     void setPitchOffset(double newPitchOffset);
@@ -73,6 +74,7 @@ private:
     
     //have defaults here?
     double res; 
+    double harmonics = 6;
     double spread = 1; 
     double shape = 0;
     int pitchOffset = 0;

@@ -60,7 +60,7 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
 {
     auto numChannels = outputBuffer.getNumChannels();
 
-    for (auto i = 0; i < numResonators; i++)
+    for (auto i = 0; i < maxResonators; i++)
     {
         //Init bufferBank
         bufferBank[i].setSize(numChannels, numSamples, false, false, true);
@@ -132,7 +132,7 @@ void SynthVoice::prepare(const juce::dsp::ProcessSpec& spec)
     exciter.setParameters(juce::ADSR::Parameters(exciterAttack, exciterRelease, 0, 0));
     exciterShape.prepare(spec);
 
-    for (auto i = 0; i < numResonators; i++)
+    for (auto i = 0; i < maxResonators; i++)
     {
         filterBank[i].prepare(spec);
     }
@@ -145,7 +145,7 @@ void SynthVoice::reset()
     exciter.reset();
     exciterShape.reset();
 
-    for (auto i = 0; i < numResonators; i++)
+    for (auto i = 0; i < maxResonators; i++)
     {
         filterBank[i].reset();
     }
@@ -179,17 +179,10 @@ void SynthVoice::updateFundamentalResonator() //change name to updateResonators
         }
         else
         {
-
-            //no lerp in my version of c++?
-            //auto harmonicRatio = std::lerp((int(prevHarmonicRatio) * spread), (prevHarmonicRatio * circularModes[i]), shape);
-
-            float squareHarmonicRatio = int(prevHarmonicRatio * (spread+1));    //truncate to only get harmoic ratios
+            //print the freqs out, see if they are correct, I think they are not!
+            
+            float squareHarmonicRatio = (prevHarmonicRatio * (spread));    //truncate to only get harmoic ratios
             float circularHarmonicRatio = (prevHarmonicRatio * spread) * circularModes[i-1];
-
-            //shape is a negative number when dial has not been used HOW!
-            //quick fix
-            //if (shape < 0)
-                //shape = 0;
 
             auto harmonicRatio = basicLerp(circularHarmonicRatio, squareHarmonicRatio, shape);
 
@@ -226,12 +219,14 @@ void SynthVoice::setFundamentalFreq(double newFundimentalFreq)
     fundimentalFreq = newFundimentalFreq; 
 }
 void SynthVoice::setFundamentalRes(double newFundimentalRes) { fundimentalRes = newFundimentalRes; }
+void SynthVoice::setResonatorAmount(double newResonatorAmount) { numResonators = int(newResonatorAmount); }
 void SynthVoice::setSpread(double newSpread) { spread = newSpread; }
 void SynthVoice::setShape(double newShape) { shape = newShape; }
 void SynthVoice::setExciterAttack(double newExciterAttack) { exciterAttack = newExciterAttack; }
 void SynthVoice::setExciterRelease(double newExciterRelease) { exciterRelease = newExciterRelease; }
 void SynthVoice::setExciterNoiseAmount(double newExciterNoiseAmount) { exciterNoiseAmount = newExciterNoiseAmount; }
 
+//RENAME TO MAKE MORE SENSE
 float SynthVoice::basicLerp(float a, float b, float t)
 {
     //basic linear interpreter

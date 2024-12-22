@@ -24,6 +24,7 @@ public:
     void setFundamentalFreq(double newFundimentalFreq);
     void setFundamentalRes(double newFundimentalRes);
 
+    void setResonatorAmount(double newResonatorAmount);
     void setSpread(double newSpread);
     void setShape(double newShape);
     void setExciterAttack(double newExciterAttack);
@@ -40,8 +41,9 @@ private:
     double fundimentalRes = 200; //this will be decay soon
 
     //Params
-    //HARMO 1 - numResonators (6)
-    //defaults here???
+
+    int numResonators = 6; //need a attenuator thing, gain = 1/numResonators
+    int maxResonators = 6;
     double spread = 1;
     double shape = 0;
 
@@ -60,7 +62,6 @@ private:
     std::array<float, 5> circularModes = {1.59f, 2.14f, 2.3f, 2.65f, 2.92f}; //add 12 or 16
 
     //IIR Filter Bank
-    const int numResonators = 6;
     std::vector<juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>>> filterBank;
     std::vector<juce::AudioBuffer<float>> bufferBank;
     //std::vector<double> resBank;

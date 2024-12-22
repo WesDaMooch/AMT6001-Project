@@ -124,7 +124,14 @@ namespace juce
 
             valueTrack.startNewSubPath(minPoint);
             valueTrack.lineTo(isThreeVal ? thumbPoint : maxPoint);
-            g.setColour(slider.findColour(Slider::trackColourId));
+
+            //Gradient Slider, set colour here
+            //ColourGradient gr(Colour(0xffb843c3), startPoint, Colour(0xff38bb9d), endPoint, false);
+            //if horisonatal dont do this
+            ColourGradient gr(Colour(255, 132, 0), startPoint, Colour(255, 0, 0), endPoint, false);
+
+            g.setGradientFill(gr);
+            //g.setColour(slider.findColour(Slider::trackColourId));
             g.strokePath(valueTrack, { trackWidth, PathStrokeType::curved, PathStrokeType::rounded });
 
             if (!isTwoVal)

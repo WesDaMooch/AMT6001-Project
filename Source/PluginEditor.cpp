@@ -106,63 +106,55 @@ void styleHorizontalSlider(juce::Slider& slider, double minRange, double maxRang
 
 
 void drawVerticalLabel(juce::Graphics& g, juce::Font font, juce::Colour colour,
-    const juce::String name, float targetSliderX, float targetSliderY, double value, float scale=1)
+    const juce::String name, float targetSliderX, float targetSliderY, double value, int precision=1)
 {
     //draw a vertical label for slider
 
     auto sliderSize = 133; 
 
-    //the scale thing is not that good, how to round to decimal places in c++
-    value = juce::roundDoubleToInt(value * scale);
+    // Convert double to string with decimal precision
+    std::stringstream stream;
+    stream << std::fixed << std::setprecision(precision) << value;
+    std::string valueString = stream.str();
 
-    juce::String valueString = std::to_string(int(value));
-    float valueWidth = juce::Font().getStringWidthFloat(valueString);
+    float valueWidth = juce::Font().getStringWidth(valueString);
 
-    float fontWidth = font.getStringWidthFloat(name);
-    float fontPadding = 35.0f;
+    //float fontWidth = font.getStringWidthFloat(name);
+    float horizontalLabelPadding = 38.0f;
+    float verticalValuePadding = 40.0f;
 
-    float x = targetSliderX + fontPadding;
-    float y = targetSliderY + fontWidth + 12.0f;
+    float labelX = targetSliderX + horizontalLabelPadding;
+    float labelY = targetSliderY + 20.0f;
 
-    float valueX = x + sliderSize - valueWidth;
-    float valueY = y;
+    float valueX = targetSliderX + sliderSize;
+    float valueY = targetSliderY + 20.0f; 
 
     juce::GlyphArrangement ga;
-    ga.addLineOfText(font, name, x, y);
-    ga.addLineOfText(font, valueString, valueX, valueY);
+    ga.addLineOfText(font, name, labelX, labelY);
+    ga.addJustifiedText(font, valueString, valueX, valueY, verticalValuePadding,
+        juce::Justification::right);
     juce::Path p;
     ga.createPath(p);
 
     auto pathBounds = p.getBounds();
 
     p.applyTransform(juce::AffineTransform().rotated(juce::MathConstants<float>::halfPi,
-        pathBounds.getCentreX(), pathBounds.getCentreY() - fontWidth / 2));
-
-
-    ga.addLineOfText(font, valueString, valueX, valueY);
-    juce::Path p2;
-    ga.createPath(p2);
-
-    auto pathBounds2 = p2.getBounds();
-
-    p2.applyTransform(juce::AffineTransform().rotated(juce::MathConstants<float>::halfPi,
-        pathBounds2.getCentreX(), pathBounds2.getCentreY() - fontWidth / 2));
+        pathBounds.getX(), pathBounds.getY()));
 
     g.setColour(colour);
     g.fillPath(p);
-
-
 }
 
 void drawHorizontalLabel(juce::Graphics& g, juce::Font font, juce::Colour colour,
-    const juce::String name, float targetSliderX, float targetSliderY, double value, float scale=1)
+    const juce::String name, float targetSliderX, float targetSliderY, double value, int precision=1)
 {
     //draw a vertical label for slider
     auto sliderSize = 133; // get this from somewhere, put in gridUI?
 
-    value = juce::roundDoubleToInt(value * scale);
+    std::stringstream stream;
+    stream << std::fixed << std::setprecision(precision) << value;
+    std::string valueString = stream.str();
 
-    juce::String valueString = std::to_string(int(value));
     float valueWidth = juce::Font().getStringWidthFloat(valueString);
 
     float fontWidth = font.getStringWidthFloat(name);
@@ -278,35 +270,35 @@ void ReSoundAudioProcessorEditor::paint (juce::Graphics& g)
         window.getHeight() - rectBottomPadding, rectCornerSize);
 
     // Draw Labels
-    juce::Font font = juce::Font("Futura", 22.0f, juce::Font::bold);
+    juce::Font font = juce::Font("Arial", 22.0f, juce::Font::bold);
     juce::Colour fontColour = juce::Colours::grey;
 
     drawVerticalLabel(g, font, fontColour, juce::String("ATTACK"),
         gridUI::columnOne, gridUI::rowOne, attackSlider.getValue());
 
     drawVerticalLabel(g, font, fontColour, juce::String("RELEASE"),
-        gridUI::columnTwo, gridUI::rowOne, releaseSlider.getValue());
+        gridUI::columnTwo, gridUI::rowOne, releaseSlider.getValue(), 0);
 
     drawVerticalLabel(g, font, fontColour, juce::String("NOISE"),
-        gridUI::columnOne, gridUI::rowTwo, exciterNoiseAmountSlider.getValue(), 100);
+        gridUI::columnOne, gridUI::rowTwo, exciterNoiseAmountSlider.getValue());
 
     drawVerticalLabel(g, font, fontColour, juce::String("PUNCH"),
-        gridUI::columnTwo, gridUI::rowTwo, punchAmountSlider.getValue(), 100);
+        gridUI::columnTwo, gridUI::rowTwo, punchAmountSlider.getValue());
 
     drawVerticalLabel(g, font, fontColour, juce::String("HARMO"),
-        gridUI::columnThree, gridUI::rowOne, harmoSlider.getValue());
+        gridUI::columnThree, gridUI::rowOne, harmoSlider.getValue(), 0);
 
     drawVerticalLabel(g, font, fontColour, juce::String("RES"),
-        gridUI::columnFour, gridUI::rowOne, resonanceSlider.getValue());
+        gridUI::columnFour, gridUI::rowOne, resonanceSlider.getValue(), 0);
 
     drawVerticalLabel(g, font, fontColour, juce::String("SPREAD"),
         gridUI::columnFive, gridUI::rowOne, spreadSlider.getValue());
 
     drawHorizontalLabel(g, font, fontColour, juce::String("SHAPE"),
-        gridUI::columnThree, gridUI::rowTwo, shapeSlider.getValue(), 100);
+        gridUI::columnThree, gridUI::rowTwo, shapeSlider.getValue());
 
     drawHorizontalLabel(g, font, fontColour, juce::String("PITCH"),
-        gridUI::columnThree, gridUI::rowThree, pitchSlider.getValue());
+        gridUI::columnThree, gridUI::rowThree, pitchSlider.getValue(), 0);
 }
 
 void ReSoundAudioProcessorEditor::resized()
@@ -359,7 +351,7 @@ void ReSoundAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     {
             //editor -> processor -> voice
             //make a better way of doing this?  
-            //audioProcessor.setHarmonics(slider->getValue());
+            audioProcessor.setHarmonics(slider->getValue());
     }
     else if (slider == &resonanceSlider)
     { 

@@ -197,7 +197,7 @@ void ReSoundAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
             //sets
             //set first reson freq with midi
             voice->setFundamentalFreq(fundimentalFreq);
-
+            voice->setResonatorAmount(harmonics);
             voice->setExciterAttack(attack);
             voice->setExciterRelease(release);
             voice->setExciterNoiseAmount(exciterNoiseAmount);
@@ -252,6 +252,7 @@ juce::MidiMessageCollector& ReSoundAudioProcessor::getMidiMessageCollector()
 //==============================================================================
 //Param setters
 void ReSoundAudioProcessor::setRes(double newRes) { res = newRes; }
+void ReSoundAudioProcessor::setHarmonics(double newHarmonics) { harmonics = newHarmonics; }
 void ReSoundAudioProcessor::setSpread(double newSpread) { spread = newSpread; }
 void ReSoundAudioProcessor::setShape(double newShape) { shape = newShape; }
 void ReSoundAudioProcessor::setPitchOffset(double newPitchOffset) { pitchOffset = newPitchOffset; }
