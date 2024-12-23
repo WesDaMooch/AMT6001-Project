@@ -37,13 +37,21 @@ private:
 
     juce::ADSR exciter;
 
+    int numResonators = 6; //need a attenuator thing, gain = 1/numResonators
+    const int maxResonators = 6;
+    // Attenuates output of filter bank based on active filters (numResonators)
+    juce::dsp::Gain<float> filterBankAttenuator;    // 0 to 1
+
     double fundimentalFreq = 130;
     double fundimentalRes = 200; //this will be decay soon
+    //  Makeup gain for high resonance
+    std::vector<juce::dsp::Gain<float>> resonatorMakeUpGainBank;    //  1 - 300
 
     //Params
+    double harmo = 6;
+    //  Allows harmonics (resonators) to be added smoothly, instead of setting with an int numResonators
+    std::vector<juce::dsp::Gain<float>> harmoAttenuatorBank;    // 0 - 1
 
-    int numResonators = 6; //need a attenuator thing, gain = 1/numResonators
-    int maxResonators = 6;
     double spread = 1;
     double shape = 0;
 
@@ -56,16 +64,13 @@ private:
     //maybe use this for punch env?
     juce::dsp::BallisticsFilter<float> exciterShape; 
 
-    //Vibrational modes of a circular membrane
-    //after Berg and Stork - who dis?
-    //is there a way of calulating nth mode - wave equation help
+    // Vibrational modes of a circular membrane
     std::array<float, 5> circularModes = {1.59f, 2.14f, 2.3f, 2.65f, 2.92f}; //add 12 or 16
 
     //IIR Filter Bank
     std::vector<juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>>> filterBank;
     std::vector<juce::AudioBuffer<float>> bufferBank;
     //std::vector<double> resBank;
-    std::vector<juce::dsp::Gain<float>> gainBank;
 
 
     //Helper func

@@ -33,15 +33,18 @@ namespace customColours
     //Pine Greesn = 19, 111, 91
     
     //Light Colours
-    juce::Colour isabelline = juce::Colour(242, 239, 234);
+    //juce::Colour isabelline = juce::Colour(242, 239, 234);
+    juce::Colour isabelline = juce::Colour(221, 221, 221);
     juce::Colour platinum = juce::Colour(221, 221, 221);
     juce::Colour timberwolf = juce::Colour(214, 214, 214);
 
     //Dark Greys
-    juce::Colour gray33 = juce::Colour(84, 84, 84);
+    //juce::Colour gray33 = juce::Colour(84, 84, 84);
+    juce::Colour gray33 = juce::Colour(59,59,59);
     juce::Colour jet = juce::Colour(60, 55, 68);
     juce::Colour gunmetal = juce::Colour(43, 47, 59);
-    juce::Colour eerieBlack = juce::Colour(31, 31, 31);
+    //juce::Colour eerieBlack = juce::Colour(31, 31, 31);
+    juce::Colour eerieBlack = juce::Colours::grey;
 
     //Accent Colours
     juce::Colour coquelicot = juce::Colour(241, 80, 37);
@@ -106,7 +109,7 @@ void styleHorizontalSlider(juce::Slider& slider, double minRange, double maxRang
 
 
 void drawVerticalLabel(juce::Graphics& g, juce::Font font, juce::Colour colour,
-    const juce::String name, float targetSliderX, float targetSliderY, double value, int precision=1)
+    const juce::String name, float targetSliderX, float targetSliderY, double value, int precision=2)
 {
     //draw a vertical label for slider
 
@@ -146,7 +149,7 @@ void drawVerticalLabel(juce::Graphics& g, juce::Font font, juce::Colour colour,
 }
 
 void drawHorizontalLabel(juce::Graphics& g, juce::Font font, juce::Colour colour,
-    const juce::String name, float targetSliderX, float targetSliderY, double value, int precision=1)
+    const juce::String name, float targetSliderX, float targetSliderY, double value, int precision=2)
 {
     //draw a vertical label for slider
     auto sliderSize = 133; // get this from somewhere, put in gridUI?
@@ -186,12 +189,9 @@ ReSoundAudioProcessorEditor::ReSoundAudioProcessorEditor (ReSoundAudioProcessor&
 {
     //Use custom LookAndFeel Class
     juce::LookAndFeel::setDefaultLookAndFeel(&myCustomLookAndFeel);
-    
-
 
     setSize (500, 600);
     setResizable(true, true); 
-
 
     //UI elements
     addAndMakeVisible(&keyboardComponent);
@@ -215,19 +215,19 @@ ReSoundAudioProcessorEditor::ReSoundAudioProcessorEditor (ReSoundAudioProcessor&
     addAndMakeVisible(&punchAmountSlider);
 
     //Harmo Amount
-    styleVerticalSlider(harmoSlider, 1, 6, 6, 1);
+    styleVerticalSlider(harmoSlider, 1.0f, 6.0f, 6.0f);
     harmoSlider.addListener(this);
     addAndMakeVisible(&harmoSlider);
     // Res
-    styleVerticalSlider(resonanceSlider, 1, 300, 100);
+    styleVerticalSlider(resonanceSlider, 1.0f, 300.0f, 100.0f);
     resonanceSlider.addListener(this); 
     addAndMakeVisible(&resonanceSlider);
     // Spread Amount
-    styleVerticalSlider(spreadSlider, 1, 3, 1);
+    styleVerticalSlider(spreadSlider, 1.0f, 3.0f, 1.0f);
     spreadSlider.addListener(this);
     addAndMakeVisible(&spreadSlider);
     // Shape
-    styleHorizontalSlider(shapeSlider, 0, 1, 0);
+    styleHorizontalSlider(shapeSlider, 0.0f, 1.0f, 0.0f);
     shapeSlider.addListener(this);
     addAndMakeVisible(&shapeSlider);
     // Pitch Offset
@@ -250,7 +250,8 @@ void ReSoundAudioProcessorEditor::paint (juce::Graphics& g)
 
        
     //Background Colour
-    g.fillAll(customColours::eerieBlack);
+    //g.fillAll(customColours::eerieBlack);
+    g.fillAll(juce::Colour(31, 31, 31));
     
     g.setColour(customColours::isabelline);
     auto window = getBounds().toFloat();
@@ -270,7 +271,8 @@ void ReSoundAudioProcessorEditor::paint (juce::Graphics& g)
         window.getHeight() - rectBottomPadding, rectCornerSize);
 
     // Draw Labels
-    juce::Font font = juce::Font("Arial", 22.0f, juce::Font::bold);
+    // Bahnschrift is a good font, is it on mac?
+    juce::Font font = juce::Font("Bahnschrift", 22.0f, juce::Font::bold);
     juce::Colour fontColour = juce::Colours::grey;
 
     drawVerticalLabel(g, font, fontColour, juce::String("ATTACK"),
@@ -286,7 +288,7 @@ void ReSoundAudioProcessorEditor::paint (juce::Graphics& g)
         gridUI::columnTwo, gridUI::rowTwo, punchAmountSlider.getValue());
 
     drawVerticalLabel(g, font, fontColour, juce::String("HARMO"),
-        gridUI::columnThree, gridUI::rowOne, harmoSlider.getValue(), 0);
+        gridUI::columnThree, gridUI::rowOne, harmoSlider.getValue());
 
     drawVerticalLabel(g, font, fontColour, juce::String("RES"),
         gridUI::columnFour, gridUI::rowOne, resonanceSlider.getValue(), 0);

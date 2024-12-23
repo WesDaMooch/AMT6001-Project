@@ -12,11 +12,19 @@ SynthVoice::SynthVoice()//:fundamentalResonator(juce::dsp::IIR::Coefficients<flo
     fundimentalRes = 200;
 
     //move this if I want to make numResonators a param
-    filterBank.resize(numResonators);
-    bufferBank.resize(numResonators);
-    gainBank.resize(numResonators);
-    for (auto i = 0; i < numResonators; i++)
-        gainBank[i].setGainLinear(1.0f);
+    filterBank.resize(maxResonators);
+    bufferBank.resize(maxResonators);
+
+    // Should vectors be dynamicly resized
+    resonatorMakeUpGainBank.resize(maxResonators);
+    for (auto i = 0; i < maxResonators; i++)
+        resonatorMakeUpGainBank[i].setGainLinear(1.0f);
+
+    harmoAttenuatorBank.resize(maxResonators);
+    for (auto i = 0; i < maxResonators; i++)
+        harmoAttenuatorBank[i].setGainLinear(1.0f);
+
+    filterBankAttenuator.setGainLinear(1.0f / numResonators);   // Division...
 }
 
 bool SynthVoice::canPlaySound(juce::SynthesiserSound* sound)
@@ -80,7 +88,6 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
             float noiseAttenuation = ((exciterNoiseAmount * 0.5f) - 1.0f) * -1.0f;
 
             *(channelData + sampleIndex) = ((noise * exciterNoiseAmount) + 1) * noiseAttenuation;
-            //*(channelData + sampleIndex) = 1;
         }
     }
     
@@ -105,8 +112,12 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
     {
         juce::dsp::AudioBlock<float> block(bufferBank[i]);
         filterBank[i].process(juce::dsp::ProcessContextReplacing<float>(block));
-        gainBank[i].process(juce::dsp::ProcessContextReplacing<float>(block));
+
+        resonatorMakeUpGainBank[i].process(juce::dsp::ProcessContextReplacing<float>(block));
+        harmoAttenuatorBank[i].process(juce::dsp::ProcessContextReplacing<float>(block));
+        filterBankAttenuator.process(juce::dsp::ProcessContextReplacing<float>(block));
     }
+
 
     //Mix bufferBank to outputBuffer
     for (int channel = 0; channel < numChannels; ++channel)
@@ -132,8 +143,13 @@ void SynthVoice::prepare(const juce::dsp::ProcessSpec& spec)
     exciter.setParameters(juce::ADSR::Parameters(exciterAttack, exciterRelease, 0, 0));
     exciterShape.prepare(spec);
 
+    //prepare gains 
+    filterBankAttenuator.prepare(spec);
+
     for (auto i = 0; i < maxResonators; i++)
     {
+        resonatorMakeUpGainBank[i].prepare(spec);
+        harmoAttenuatorBank[i].prepare(spec);
         filterBank[i].prepare(spec);
     }
 
@@ -145,8 +161,14 @@ void SynthVoice::reset()
     exciter.reset();
     exciterShape.reset();
 
+    //reset gains
+    filterBankAttenuator.reset();
+
+
     for (auto i = 0; i < maxResonators; i++)
     {
+        resonatorMakeUpGainBank[i].reset();
+        harmoAttenuatorBank[i].reset();
         filterBank[i].reset();
     }
 }
@@ -160,7 +182,9 @@ void SynthVoice::updateFundamentalResonator() //change name to updateResonators
 
         float freq;
         float q;
+
         int gainOn = 1;
+        float harmoAttenuator = 1.0f;
 
         if (i < 1)
         {
@@ -181,7 +205,7 @@ void SynthVoice::updateFundamentalResonator() //change name to updateResonators
         {
             //print the freqs out, see if they are correct, I think they are not!
             
-            float squareHarmonicRatio = (prevHarmonicRatio * (spread));    //truncate to only get harmoic ratios
+            float squareHarmonicRatio = (prevHarmonicRatio * (spread + 1)); //+1?, truncate to only get harmoic ratios
             float circularHarmonicRatio = (prevHarmonicRatio * spread) * circularModes[i-1];
 
             auto harmonicRatio = basicLerp(circularHarmonicRatio, squareHarmonicRatio, shape);
@@ -199,11 +223,24 @@ void SynthVoice::updateFundamentalResonator() //change name to updateResonators
             *filterBank[i].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate, freq, q);
 
             prevHarmonicRatio = harmonicRatio;
+
+            harmoAttenuator = harmo - i;
+            if (harmoAttenuator < 0.0f)
+                harmoAttenuator = 0.0f;
+            else if (harmoAttenuator > 1.0f)
+                harmoAttenuator = 1.0f;
         }
 
-        //Set gain
-        gainBank[i].setGainLinear(q * 0.5 * gainOn);
+        // Set make up gain
+        resonatorMakeUpGainBank[i].setGainLinear(q * 0.5);
+
+        harmoAttenuator *= gainOn;
+        // Set attenuation from harmo param, only effects overtone harmonics
+        harmoAttenuatorBank[i].setGainLinear(harmoAttenuator);
     }
+    
+    // Update filter bank attenuation based on active filters
+    filterBankAttenuator.setGainLinear(1.0f / numResonators);
 
     // Update exciter
     exciter.setParameters(juce::ADSR::Parameters(exciterAttack*0.001, exciterRelease*0.001, 0, 0));
@@ -219,7 +256,15 @@ void SynthVoice::setFundamentalFreq(double newFundimentalFreq)
     fundimentalFreq = newFundimentalFreq; 
 }
 void SynthVoice::setFundamentalRes(double newFundimentalRes) { fundimentalRes = newFundimentalRes; }
-void SynthVoice::setResonatorAmount(double newResonatorAmount) { numResonators = int(newResonatorAmount); }
+void SynthVoice::setResonatorAmount(double newHarmo)    // rename setHarmo 
+{
+    harmo = newHarmo;
+    // numResonators one bigger than harmo
+    int tempNumResonators = int(newHarmo + 1);
+    if (tempNumResonators > maxResonators)
+        tempNumResonators = maxResonators;
+    numResonators = tempNumResonators;
+}
 void SynthVoice::setSpread(double newSpread) { spread = newSpread; }
 void SynthVoice::setShape(double newShape) { shape = newShape; }
 void SynthVoice::setExciterAttack(double newExciterAttack) { exciterAttack = newExciterAttack; }

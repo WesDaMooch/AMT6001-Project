@@ -128,16 +128,26 @@ namespace juce
             //Gradient Slider, set colour here
             //ColourGradient gr(Colour(0xffb843c3), startPoint, Colour(0xff38bb9d), endPoint, false);
             //if horisonatal dont do this
-            ColourGradient gr(Colour(255, 132, 0), startPoint, Colour(255, 0, 0), endPoint, false);
 
-            g.setGradientFill(gr);
-            //g.setColour(slider.findColour(Slider::trackColourId));
+            if (slider.isHorizontal())
+            {
+                g.setColour(slider.findColour(Slider::trackColourId));
+            }
+            else
+            {
+                ColourGradient gr(Colour(0xffb843c3), startPoint, Colour(0xff38bb9d), endPoint, false);
+                //ColourGradient gr(Colour(255, 132, 0), startPoint, Colour(255, 0, 0), endPoint, false);
+                g.setGradientFill(gr);
+            }
+            
             g.strokePath(valueTrack, { trackWidth, PathStrokeType::curved, PathStrokeType::rounded });
 
             if (!isTwoVal)
             {
                 g.setColour(slider.findColour(Slider::thumbColourId));
-                g.fillEllipse(Rectangle<float>(static_cast<float> (thumbWidth), static_cast<float> (thumbWidth)).withCentre(isThreeVal ? thumbPoint : maxPoint));
+                //g.fillEllipse(Rectangle<float>(static_cast<float> (thumbWidth), static_cast<float> (thumbWidth)).withCentre(isThreeVal ? thumbPoint : maxPoint));
+                g.fillRoundedRectangle(Rectangle<float>(static_cast<float> (thumbWidth) * 1.5f, static_cast<float> (thumbWidth) * 0.75f).withCentre(isThreeVal ? thumbPoint : maxPoint),
+                    4.0f);
             }
 
             if (isTwoVal || isThreeVal)
@@ -165,8 +175,6 @@ namespace juce
                         trackWidth * 2.0f, pointerColour, 3);
                 }
             }
-
-            //what
             if (slider.isBar())
                 drawLinearSliderOutline(g, x, y, width, height, style, slider);
         }
