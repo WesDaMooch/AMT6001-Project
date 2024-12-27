@@ -198,9 +198,11 @@ void ReSoundAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
             //set first reson freq with midi
             voice->setFundamentalFreq(fundimentalFreq);
             voice->setResonatorAmount(harmonics);
+
             voice->setExciterAttack(attack);
             voice->setExciterRelease(release);
             voice->setExciterNoiseAmount(exciterNoiseAmount);
+            voice->setPunchRelease(punchAmount);
             
             voice->setFundamentalRes(res);
             voice->setSpread(spread);
@@ -250,14 +252,15 @@ juce::MidiMessageCollector& ReSoundAudioProcessor::getMidiMessageCollector()
 }
 
 //==============================================================================
-//Param setters
+// Param setters
+// Body
 void ReSoundAudioProcessor::setRes(double newRes) { res = newRes; }
 void ReSoundAudioProcessor::setHarmonics(double newHarmonics) { harmonics = newHarmonics; }
 void ReSoundAudioProcessor::setSpread(double newSpread) { spread = newSpread; }
 void ReSoundAudioProcessor::setShape(double newShape) { shape = newShape; }
 void ReSoundAudioProcessor::setPitchOffset(double newPitchOffset) { pitchOffset = newPitchOffset; }
-
+// Exciter
 void ReSoundAudioProcessor::setAttack(double newAttack) { attack = newAttack; }
 void ReSoundAudioProcessor::setRelease(double newRelease) { release = newRelease; }
 void ReSoundAudioProcessor::setExciterNoiseAmount(double newExciterNoiseAmount) { exciterNoiseAmount = newExciterNoiseAmount; }
-
+void ReSoundAudioProcessor::setPunchAmount(double newPunchAmount) { punchAmount = newPunchAmount; }

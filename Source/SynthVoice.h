@@ -1,6 +1,12 @@
 #pragma once
-
 #include <JuceHeader.h>
+
+/*
+    ISSUES
+    Can click when changing HARMO param quickly - fix by having two numResonates varables, one for updateParameters
+    and another for renderNextBlock, stop using the same variable for both...
+*/
+
 
 class SynthVoice : public juce::SynthesiserVoice
 {
@@ -17,10 +23,10 @@ public:
     void prepare(const juce::dsp::ProcessSpec& spec);
     void reset();
 
-    //internal update funtions
-    void updateFundamentalResonator();
+    // Internal update funtions
+    void updateParameters();
 
-    //calls for UI
+    // Calls for silders
     void setFundamentalFreq(double newFundimentalFreq);
     void setFundamentalRes(double newFundimentalRes);
 
@@ -30,27 +36,29 @@ public:
     void setExciterAttack(double newExciterAttack);
     void setExciterRelease(double newExciterRelease);
     void setExciterNoiseAmount(double newExciterNoiseAmount);
+    void setPunchRelease(double newPunchRelease);
 
 private:
-
-    double sampleRate = 44100; 
+    float sampleRate = 44100; 
 
     juce::ADSR exciter;
 
-    int numResonators = 6; //need a attenuator thing, gain = 1/numResonators
-    const int maxResonators = 6;
+    int numResonators = 6;
+    const int maxResonators = 12;
     // Attenuates output of filter bank based on active filters (numResonators)
     juce::dsp::Gain<float> filterBankAttenuator;    // 0 to 1
 
     double fundimentalFreq = 130;
+
+
+    std::vector<float> freqBank;
+    std::vector<float> qBank;   
     double fundimentalRes = 200; //this will be decay soon
-    //  Makeup gain for high resonance
-    std::vector<juce::dsp::Gain<float>> resonatorMakeUpGainBank;    //  1 - 300
+    std::vector<juce::dsp::Gain<float>> resonatorMakeUpGainBank;    //  Makeup gain for high resonance, 1 - 300
 
     //Params
     double harmo = 6;
-    //  Allows harmonics (resonators) to be added smoothly, instead of setting with an int numResonators
-    std::vector<juce::dsp::Gain<float>> harmoAttenuatorBank;    // 0 - 1
+    std::vector<juce::dsp::Gain<float>> harmoAttenuatorBank; 
 
     double spread = 1;
     double shape = 0;
@@ -60,20 +68,21 @@ private:
     double exciterRelease = 1.0f;
     double exciterNoiseAmount = 0.0f;
     juce::Random randomFloat;
-
-    //maybe use this for punch env?
-    juce::dsp::BallisticsFilter<float> exciterShape; 
+    // Punch
+    juce::ADSR punchModulationEnvelope;
+    float punchRelease = 0; 
+    float punchDepth = 100.0f;  // Depth of filter cutoff modulation in Hz
 
     // Vibrational modes of a circular membrane
-    std::array<float, 5> circularModes = {1.59f, 2.14f, 2.3f, 2.65f, 2.92f}; //add 12 or 16
+    std::array<float, 11> circularModes = {1.59f, 2.14f, 2.3f, 2.65f, 2.92f,
+    3.16, 3.5, 3.6, 3.65, 4.06, 4.15}; 
 
-    //IIR Filter Bank
+    //  IIR Filter Bank
     std::vector<juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>>> filterBank;
     std::vector<juce::AudioBuffer<float>> bufferBank;
-    //std::vector<double> resBank;
 
-
-    //Helper func
+    // Helper functions
+    //USE JUCE Interpolator??
     float basicLerp(float a, float b, float t);
 };
 

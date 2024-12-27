@@ -9,9 +9,15 @@ SynthVoice::SynthVoice()//:fundamentalResonator(juce::dsp::IIR::Coefficients<flo
     spread = 1;
 
     fundimentalFreq = 130;
-    fundimentalRes = 200;
+    freqBank.resize(maxResonators);
+    for (auto i = 0; i < maxResonators; i++)
+        freqBank[i] = 440.0f;
 
-    //move this if I want to make numResonators a param
+    fundimentalRes = 200;
+    qBank.resize(maxResonators);
+    for (auto i = 0; i < maxResonators; i++)
+        qBank[i] = 200.0f;
+
     filterBank.resize(maxResonators);
     bufferBank.resize(maxResonators);
 
@@ -23,8 +29,6 @@ SynthVoice::SynthVoice()//:fundamentalResonator(juce::dsp::IIR::Coefficients<flo
     harmoAttenuatorBank.resize(maxResonators);
     for (auto i = 0; i < maxResonators; i++)
         harmoAttenuatorBank[i].setGainLinear(1.0f);
-
-    filterBankAttenuator.setGainLinear(1.0f / numResonators);   // Division...
 }
 
 bool SynthVoice::canPlaySound(juce::SynthesiserSound* sound)
@@ -34,26 +38,26 @@ bool SynthVoice::canPlaySound(juce::SynthesiserSound* sound)
 
 void SynthVoice::startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound* sound, int currentPitchWheelPosition)
 {
-    //Trigger Exciter
+    // Update most params at the start of note, no need to have params change after they have been triggered
+    updateParameters();
+
+    // Trigger exciter
     exciter.noteOn();
-
-    //make this except midi number? - updateFundamentalResonator(midiNoteNumber)
-    updateFundamentalResonator();
-
-    //dont like this rly, pass the exciter through a filter maybe to get more interesting shapes
-    //exciterShape.setAttackTime(exciterAttack)
-    //exciterShape.setReleaseTime(e);
-
+    // Trigger punch envelope
+    punchModulationEnvelope.noteOn();
 }
 
 void SynthVoice::stopNote(float velocity, bool allowTailOff)
 {
     //need a way to end note and clearCurrentNote()
     exciter.noteOff();
-    //if (!exciter.isActive())
-    //{
-        //clearCurrentNote();
-    //}
+    //punchModulationEnvelope.noteOff();
+
+    if (!exciter.isActive())
+    {
+        clearCurrentNote();
+    }
+    
 }
 
 void SynthVoice::pitchWheelMoved(int newPitchWheelValue)
@@ -78,6 +82,9 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
     //Get first buffer in bank and fill with exciter
     juce::AudioBuffer<float> baseBuffer = bufferBank[0];
 
+    punchModulationEnvelope.applyEnvelopeToBuffer(baseBuffer, 0, numSamples);  // Quirk of ADSR, have to apple env to something
+    baseBuffer.clear();
+
     for (int channel = 0; channel < numChannels; ++channel)
     {
         auto* channelData = baseBuffer.getWritePointer(channel);
@@ -91,35 +98,41 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
         }
     }
     
-    //Apply Exciter Env
+    // Apply Exciter Envelope
     exciter.applyEnvelopeToBuffer(baseBuffer, 0, numSamples);
     
 
-    //juce::dsp::AudioBlock<float> exciterBlock(baseBuffer); //maybe this kinda thing for punch env
-   // exciterShape.process(juce::dsp::ProcessContextReplacing<float>(exciterBlock));
-
-
-    //Copy Exciter in baseBuffer to other buffers - could do thos above
+    // Process buffers through filterBank
     for (auto i = 0; i < numResonators; i++)
     {
-        //bufferBank[i].makeCopyOf(baseBuffer, 0, numSamples);
+        // Copy Exciter in baseBuffer to other buffers
         bufferBank[i].makeCopyOf(baseBuffer, numSamples);
-    }
 
+        float freq = freqBank[i];
+        float freqMod = punchModulationEnvelope.getNextSample();
 
-    //Process buffers through filterBank
-    for (auto i = 0; i < numResonators; i++)
-    {
+        // Get punch filter modulation envelope
+        freq = freq + (freqMod * punchDepth);
+
+        // Limit freq at 20Hz and Niquist
+        freq = std::fmax(freq, 20.0f);
+        freq = std::fmin(freq, sampleRate * 0.5);
+
+        // Update filter parameters
+        *filterBank[i].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate,
+            freq, qBank[i]);
+
+        // Apply filter to buffer
         juce::dsp::AudioBlock<float> block(bufferBank[i]);
         filterBank[i].process(juce::dsp::ProcessContextReplacing<float>(block));
 
+        // Apply gain and attenuation
         resonatorMakeUpGainBank[i].process(juce::dsp::ProcessContextReplacing<float>(block));
         harmoAttenuatorBank[i].process(juce::dsp::ProcessContextReplacing<float>(block));
-        filterBankAttenuator.process(juce::dsp::ProcessContextReplacing<float>(block));
     }
 
 
-    //Mix bufferBank to outputBuffer
+    // Mix bufferBank to outputBuffer
     for (int channel = 0; channel < numChannels; ++channel)
     {   
         for (auto i = 0; i < numResonators; i++)
@@ -128,23 +141,21 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
         }
     }
 
-    //if (!exciter.isActive())
-    //{
-        //clearCurrentNote();
-    //}
+    if (!exciter.isActive())
+    {
+        clearCurrentNote();
+    }
 }
 
 void SynthVoice::prepare(const juce::dsp::ProcessSpec& spec)
 {
     sampleRate = spec.sampleRate; 
 
-    //Very short click impulse
     exciter.setSampleRate(sampleRate);
     exciter.setParameters(juce::ADSR::Parameters(exciterAttack, exciterRelease, 0, 0));
-    exciterShape.prepare(spec);
 
-    //prepare gains 
-    filterBankAttenuator.prepare(spec);
+    punchModulationEnvelope.setSampleRate(sampleRate);
+    punchModulationEnvelope.setParameters(juce::ADSR::Parameters(0, punchRelease, 0, 0));
 
     for (auto i = 0; i < maxResonators; i++)
     {
@@ -159,11 +170,7 @@ void SynthVoice::prepare(const juce::dsp::ProcessSpec& spec)
 void SynthVoice::reset()
 {
     exciter.reset();
-    exciterShape.reset();
-
-    //reset gains
-    filterBankAttenuator.reset();
-
+    punchModulationEnvelope.reset();
 
     for (auto i = 0; i < maxResonators; i++)
     {
@@ -173,7 +180,7 @@ void SynthVoice::reset()
     }
 }
 
-void SynthVoice::updateFundamentalResonator() //change name to updateResonators
+void SynthVoice::updateParameters() //change name to updateResonators
 {
     //update filters
     auto prevHarmonicRatio = 1;
@@ -198,8 +205,9 @@ void SynthVoice::updateFundamentalResonator() //change name to updateResonators
             }
 
             q = fundimentalRes;
-            //ArrayCoefficients does not allocate memory and Coefficients does...
-            *filterBank[0].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate, freq, q);
+
+            qBank[0] = q;
+            freqBank[0] = freq;
         }
         else
         {
@@ -211,16 +219,18 @@ void SynthVoice::updateFundamentalResonator() //change name to updateResonators
             auto harmonicRatio = basicLerp(circularHarmonicRatio, squareHarmonicRatio, shape);
 
             freq = harmonicRatio * fundimentalFreq;
+
             if (freq > sampleRate * 0.5 || freq < 20.0f)
             {
-                //maybe if they exceed niquit they get refected
-                //aliasing on perpose?!??!
                 freq = 440;  
                 gainOn = 0;
+                //can used std::fmax and fmin 
             }
 
             q = fundimentalRes;
-            *filterBank[i].state = juce::dsp::IIR::ArrayCoefficients<float>::makeBandPass(sampleRate, freq, q);
+
+            qBank[i] = q;
+            freqBank[i] = freq;
 
             prevHarmonicRatio = harmonicRatio;
 
@@ -239,11 +249,9 @@ void SynthVoice::updateFundamentalResonator() //change name to updateResonators
         harmoAttenuatorBank[i].setGainLinear(harmoAttenuator);
     }
     
-    // Update filter bank attenuation based on active filters
-    filterBankAttenuator.setGainLinear(1.0f / numResonators);
-
     // Update exciter
-    exciter.setParameters(juce::ADSR::Parameters(exciterAttack*0.001, exciterRelease*0.001, 0, 0));
+    exciter.setParameters(juce::ADSR::Parameters(exciterAttack * 0.001, exciterRelease * 0.001, 0, 0));
+    punchModulationEnvelope.setParameters(juce::ADSR::Parameters(0, (punchRelease * 5.0f) * 0.001, 0, 0));
 }
 
 //==============================================================================
@@ -270,6 +278,7 @@ void SynthVoice::setShape(double newShape) { shape = newShape; }
 void SynthVoice::setExciterAttack(double newExciterAttack) { exciterAttack = newExciterAttack; }
 void SynthVoice::setExciterRelease(double newExciterRelease) { exciterRelease = newExciterRelease; }
 void SynthVoice::setExciterNoiseAmount(double newExciterNoiseAmount) { exciterNoiseAmount = newExciterNoiseAmount; }
+void SynthVoice::setPunchRelease(double newPunchRelease) { punchRelease = newPunchRelease; }
 
 //RENAME TO MAKE MORE SENSE
 float SynthVoice::basicLerp(float a, float b, float t)

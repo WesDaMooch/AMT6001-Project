@@ -65,6 +65,7 @@ public:
     void setAttack(double newAttack);
     void setRelease(double newRelease);
     void setExciterNoiseAmount(double newExciterNoiseAmount);
+    void setPunchAmount(double newPunchAmount);
 
 private:
     //==============================================================================
@@ -82,6 +83,8 @@ private:
     double attack = 1; //rename exciterAttack
     double release = 1; 
     double exciterNoiseAmount = 0;
+
+    double punchAmount = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ReSoundAudioProcessor)
 };
