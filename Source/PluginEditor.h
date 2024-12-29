@@ -17,7 +17,8 @@
 /**
 */
 class ReSoundAudioProcessorEditor  : public juce::AudioProcessorEditor,
-                                     public juce::Slider::Listener
+                                     public juce::Slider::Listener,
+                                     public juce::AudioProcessorParameter::Listener
 {
 public:
     ReSoundAudioProcessorEditor (ReSoundAudioProcessor&);
@@ -25,24 +26,25 @@ public:
 
     //==============================================================================
     void paint (juce::Graphics&) override;
-    void resized() override;
+    void resized() override; 
 
+    
 
 private:
+     
     void sliderValueChanged(juce::Slider* slider) override;
+    void parameterValueChanged(int parameterIndex, float newValue) override;            
+    void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override;  
 
     ReSoundAudioProcessor& audioProcessor;
 
     juce::CustomLookAndFeel myCustomLookAndFeel;
-
-    //get rid of the labels
 
     // Exciter pramas
     juce::Slider attackSlider;
     juce::Slider releaseSlider;
     juce::Slider exciterNoiseAmountSlider;
     juce::Slider punchAmountSlider;
-;
 
     //Replace With DECAY
     juce::Slider harmoSlider;

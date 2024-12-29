@@ -216,7 +216,7 @@ void SynthVoice::updateParameters() //change name to updateResonators
             float squareHarmonicRatio = (prevHarmonicRatio * (spread + 1)); //+1?, truncate to only get harmoic ratios
             float circularHarmonicRatio = (prevHarmonicRatio * spread) * circularModes[i-1];
 
-            auto harmonicRatio = basicLerp(circularHarmonicRatio, squareHarmonicRatio, shape);
+            auto harmonicRatio = linearInterpolator(circularHarmonicRatio, squareHarmonicRatio, shape);
 
             freq = harmonicRatio * fundimentalFreq;
 
@@ -256,15 +256,15 @@ void SynthVoice::updateParameters() //change name to updateResonators
 
 //==============================================================================
 //Setters
-void SynthVoice::setFundamentalFreq(double newFundimentalFreq)
+void SynthVoice::setFundamentalFreq(float newFundimentalFreq)
 {
     if (newFundimentalFreq < 20.0f)
         newFundimentalFreq = 20.0f;
 
     fundimentalFreq = newFundimentalFreq; 
 }
-void SynthVoice::setFundamentalRes(double newFundimentalRes) { fundimentalRes = newFundimentalRes; }
-void SynthVoice::setResonatorAmount(double newHarmo)    // rename setHarmo 
+void SynthVoice::setFundamentalRes(float newFundimentalRes) { fundimentalRes = newFundimentalRes; }
+void SynthVoice::setResonatorAmount(float newHarmo)    // rename setHarmo 
 {
     harmo = newHarmo;
     // numResonators one bigger than harmo
@@ -273,17 +273,17 @@ void SynthVoice::setResonatorAmount(double newHarmo)    // rename setHarmo
         tempNumResonators = maxResonators;
     numResonators = tempNumResonators;
 }
-void SynthVoice::setSpread(double newSpread) { spread = newSpread; }
-void SynthVoice::setShape(double newShape) { shape = newShape; }
-void SynthVoice::setExciterAttack(double newExciterAttack) { exciterAttack = newExciterAttack; }
-void SynthVoice::setExciterRelease(double newExciterRelease) { exciterRelease = newExciterRelease; }
-void SynthVoice::setExciterNoiseAmount(double newExciterNoiseAmount) { exciterNoiseAmount = newExciterNoiseAmount; }
-void SynthVoice::setPunchRelease(double newPunchRelease) { punchRelease = newPunchRelease; }
+void SynthVoice::setSpread(float newSpread) { spread = newSpread; }
+void SynthVoice::setShape(float newShape) { shape = newShape; }
+void SynthVoice::setExciterAttack(float newExciterAttack) { exciterAttack = newExciterAttack; }
+void SynthVoice::setExciterRelease(float newExciterRelease) { exciterRelease = newExciterRelease; }
+void SynthVoice::setExciterNoiseAmount(float newExciterNoiseAmount) { exciterNoiseAmount = newExciterNoiseAmount; }
+void SynthVoice::setPunchRelease(float newPunchRelease) { punchRelease = newPunchRelease; }
 
 //RENAME TO MAKE MORE SENSE
-float SynthVoice::basicLerp(float a, float b, float t)
+float SynthVoice::linearInterpolator(float inputOne, float inputTwo, float mix)
 {
     //basic linear interpreter
-    auto output = (a * (1.0f - t)) + (b * t);
+    auto output = (inputOne * (1.0f - mix)) + (inputTwo * mix);
     return output;
 }

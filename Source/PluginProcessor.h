@@ -5,6 +5,19 @@
 
   ==============================================================================
 */
+/*
+* ISSUES
+* One parameter, Exciter Attack has been made open to the host DAW,
+* however modulation of this parameter causes the plugin or DAW to crash.
+* Tested on FL Studio 20, no way to test in another DAW - maybe it will work in Ableton...
+* Have not opened up other parameters to the host as the current method has problems.
+* 
+* Can click when changing HARMO param quickly - fix by having two numResonates varables, one for updateParameters
+* and another for renderNextBlock, stop using the same variable for both...
+*
+* CPU usage seems pretty bad...
+*/
+
 
 #pragma once
 
@@ -62,7 +75,11 @@ public:
     void setShape(double newShape);
     void setPitchOffset(double newPitchOffset);
 
-    void setAttack(double newAttack);
+    double getExciterAttack();                                
+    void setExciterAttack(double newAttack);                       
+    juce::NormalisableRange<double> getExciterAttackRange();
+    juce::AudioParameterFloat* getExciterAttackParameter();
+
     void setRelease(double newRelease);
     void setExciterNoiseAmount(double newExciterNoiseAmount);
     void setPunchAmount(double newPunchAmount);
@@ -80,8 +97,12 @@ private:
     double shape = 0;
     int pitchOffset = 0;
 
-    double attack = 1; //rename exciterAttack
+    juce::AudioParameterFloat* exciterAttack;
+    juce::NormalisableRange<double> exciterAttackRange;
+
+    //change to floats and convert in set funcs
     double release = 1; 
+
     double exciterNoiseAmount = 0;
 
     double punchAmount = 0;

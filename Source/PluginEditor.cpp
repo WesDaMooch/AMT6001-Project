@@ -216,10 +216,19 @@ ReSoundAudioProcessorEditor::ReSoundAudioProcessorEditor (ReSoundAudioProcessor&
     addAndMakeVisible(&keyboardComponent);
     keyboardState.addListener(&audioProcessor.getMidiMessageCollector());
 
-    // Exciter Attack
-    styleVerticalSlider(attackSlider, 0.1f, 10.0f, 1.0f); //in ms
+    // Exciter Attack - this param is available to the host
+    // It uses different get and set functions than the others
+    //styleVerticalSlider(attackSlider, 0.1f, 10.0f, 1.0f); //in ms
+    attackSlider.setNormalisableRange(audioProcessor.getExciterAttackRange());
+    attackSlider.setValue(audioProcessor.getExciterAttack());
+    attackSlider.setSliderStyle(juce::Slider::LinearVertical);
+    attackSlider.setColour(juce::Slider::ColourIds::trackColourId, customColours::coquelicot);
+    attackSlider.setColour(juce::Slider::ColourIds::thumbColourId, customColours::gray33);
+    attackSlider.setColour(juce::Slider::ColourIds::backgroundColourId, customColours::eerieBlack);
     attackSlider.addListener(this);
     addAndMakeVisible(&attackSlider);
+
+
     // Exciter Release
     styleVerticalSlider(releaseSlider, 0.1f, 100.0f, 1.0f); 
     releaseSlider.addListener(this);
@@ -232,7 +241,6 @@ ReSoundAudioProcessorEditor::ReSoundAudioProcessorEditor (ReSoundAudioProcessor&
     styleVerticalSlider(punchAmountSlider, 0.0f, 100.0f, 0.0f);
     punchAmountSlider.addListener(this);
     addAndMakeVisible(&punchAmountSlider);
-
     //Harmo Amount
     styleVerticalSlider(harmoSlider, 1.0f, 12.0f, 6.0f);
     harmoSlider.addListener(this);
@@ -253,6 +261,11 @@ ReSoundAudioProcessorEditor::ReSoundAudioProcessorEditor (ReSoundAudioProcessor&
     styleHorizontalSlider(pitchSlider, -12, 12, 0, 1);
     pitchSlider.addListener(this);
     addAndMakeVisible(&pitchSlider);
+
+    for (auto* param : audioProcessor.getParameters())
+    {
+        param->addListener(this); //adding listerner for host (DAW) to see it... 
+    }
 }
 
 ReSoundAudioProcessorEditor::~ReSoundAudioProcessorEditor()
@@ -414,7 +427,7 @@ void ReSoundAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     }
     else if (slider == &attackSlider)
     {
-        audioProcessor.setAttack(slider->getValue());
+        audioProcessor.setExciterAttack(slider->getValue());
     }
     else if (slider == &releaseSlider)
     {
@@ -431,4 +444,21 @@ void ReSoundAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 
     // Repaint UI if slider value change
     repaint();
+}
+
+void ReSoundAudioProcessorEditor::parameterValueChanged(int parameterIndex, float newValue)
+{   
+    // Updates sliders with values sent from host
+    auto* parameter = audioProcessor.getParameters()[parameterIndex];
+    if (parameter == audioProcessor.getExciterAttackParameter())
+    {
+        auto range = audioProcessor.getExciterAttackRange();
+        auto exciterAttackValue = range.convertFrom0to1(newValue);
+        attackSlider.setValue(exciterAttackValue, juce::dontSendNotification);
+    }
+    
+}
+
+void ReSoundAudioProcessorEditor::parameterGestureChanged(int /*parameterIndex*/, bool /*gestureIsStarting*/)
+{
 }

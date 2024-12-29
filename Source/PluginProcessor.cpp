@@ -25,17 +25,24 @@ ReSoundAudioProcessor::ReSoundAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       ), exciterAttackRange(0.1f, 10.0f)
+                        
+                        
 #endif
 {   
     for (int i = 0; i < Constants::num_voices; i++)
     {
-        //add voices
+        // Add voices
         synth.addVoice(new SynthVoice());
     }
 
     synth.clearSounds();
     synth.addSound(new SynthSound());
+
+    exciterAttack = new juce::AudioParameterFloat({ "attack", 1 }, "Exciter Attack",
+        float(exciterAttackRange.start), float(exciterAttackRange.end), 1.0f);
+    addParameter(exciterAttack);
+    
 }
 
 ReSoundAudioProcessor::~ReSoundAudioProcessor()
@@ -114,7 +121,7 @@ void ReSoundAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
     juce::dsp::ProcessSpec spec;
     spec.sampleRate = sampleRate;
     spec.maximumBlockSize = samplesPerBlock;
-    //spec.numChannels = getTotalNumInputChannels();
+    //spec.numChannels = getTotalNumInputChannels(); //THIS CAUSES AN ERROR, WHY DOES IT NOT RETURN 2
     spec.numChannels = 2;
 
     for (int i = 0; i < synth.getNumVoices(); i++)
@@ -166,10 +173,10 @@ void ReSoundAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
 
-    //Clear Midi Queue
+    // Clear Midi Queue
     midiMessageCollector.removeNextBlockOfMessages(midiMessages, buffer.getNumSamples());
 
-    //Get Midi Message and convert to 
+    // Get Midi Message and convert to Hz
     double fundimentalFreq;
     for (juce::MidiMessageMetadata metadata : midiMessages)
     {
@@ -199,7 +206,10 @@ void ReSoundAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
             voice->setFundamentalFreq(fundimentalFreq);
             voice->setResonatorAmount(harmonics);
 
-            voice->setExciterAttack(attack);
+            //voice->setExciterAttack(attack);
+            //voice->setExciterAttack(getExciterAttack());
+            voice->setExciterAttack(exciterAttack->get());
+
             voice->setExciterRelease(release);
             voice->setExciterNoiseAmount(exciterNoiseAmount);
             voice->setPunchRelease(punchAmount);
@@ -259,8 +269,29 @@ void ReSoundAudioProcessor::setHarmonics(double newHarmonics) { harmonics = newH
 void ReSoundAudioProcessor::setSpread(double newSpread) { spread = newSpread; }
 void ReSoundAudioProcessor::setShape(double newShape) { shape = newShape; }
 void ReSoundAudioProcessor::setPitchOffset(double newPitchOffset) { pitchOffset = newPitchOffset; }
+
 // Exciter
 void ReSoundAudioProcessor::setAttack(double newAttack) { attack = newAttack; }
+double ReSoundAudioProcessor::getExciterAttack()
+{
+    return exciterAttack->get();
+}
+
+void ReSoundAudioProcessor::setExciterAttack(double newAttack)
+{
+    *exciterAttack = static_cast<float>(newAttack);
+}
+
+juce::NormalisableRange<double> ReSoundAudioProcessor::getExciterAttackRange()
+{
+    return exciterAttackRange;
+}
+juce::AudioParameterFloat* ReSoundAudioProcessor::getExciterAttackParameter()
+{
+    return exciterAttack;
+}
+
+
 void ReSoundAudioProcessor::setRelease(double newRelease) { release = newRelease; }
 void ReSoundAudioProcessor::setExciterNoiseAmount(double newExciterNoiseAmount) { exciterNoiseAmount = newExciterNoiseAmount; }
 void ReSoundAudioProcessor::setPunchAmount(double newPunchAmount) { punchAmount = newPunchAmount; }

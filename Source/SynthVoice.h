@@ -5,6 +5,10 @@
     ISSUES
     Can click when changing HARMO param quickly - fix by having two numResonates varables, one for updateParameters
     and another for renderNextBlock, stop using the same variable for both...
+
+    CPU usage seems pretty bad...
+
+    Params are not seen by host...
 */
 
 
@@ -27,16 +31,15 @@ public:
     void updateParameters();
 
     // Calls for silders
-    void setFundamentalFreq(double newFundimentalFreq);
-    void setFundamentalRes(double newFundimentalRes);
-
-    void setResonatorAmount(double newResonatorAmount);
-    void setSpread(double newSpread);
-    void setShape(double newShape);
-    void setExciterAttack(double newExciterAttack);
-    void setExciterRelease(double newExciterRelease);
-    void setExciterNoiseAmount(double newExciterNoiseAmount);
-    void setPunchRelease(double newPunchRelease);
+    void setFundamentalFreq(float newFundimentalFreq);
+    void setFundamentalRes(float newFundimentalRes);
+    void setResonatorAmount(float newResonatorAmount);
+    void setSpread(float newSpread);
+    void setShape(float newShape);
+    void setExciterAttack(float newExciterAttack);
+    void setExciterRelease(float newExciterRelease);
+    void setExciterNoiseAmount(float newExciterNoiseAmount);
+    void setPunchRelease(float newPunchRelease);
 
 private:
     float sampleRate = 44100; 
@@ -48,25 +51,25 @@ private:
     // Attenuates output of filter bank based on active filters (numResonators)
     juce::dsp::Gain<float> filterBankAttenuator;    // 0 to 1
 
-    double fundimentalFreq = 130;
+    float fundimentalFreq = 130;
 
 
     std::vector<float> freqBank;
     std::vector<float> qBank;   
-    double fundimentalRes = 200; //this will be decay soon
+    float fundimentalRes = 200; //this will be decay soon
     std::vector<juce::dsp::Gain<float>> resonatorMakeUpGainBank;    //  Makeup gain for high resonance, 1 - 300
 
     //Params
-    double harmo = 6;
+    float harmo = 6;
     std::vector<juce::dsp::Gain<float>> harmoAttenuatorBank; 
 
-    double spread = 1;
-    double shape = 0;
+    float spread = 1;
+    float shape = 0;
 
     // Exciter
-    double exciterAttack = 1.0f; //in ms (*0.001 for s)
-    double exciterRelease = 1.0f;
-    double exciterNoiseAmount = 0.0f;
+    float exciterAttack = 1.0f; //in ms (*0.001 for s)
+    float exciterRelease = 1.0f;
+    float exciterNoiseAmount = 0.0f;
     juce::Random randomFloat;
     // Punch
     juce::ADSR punchModulationEnvelope;
