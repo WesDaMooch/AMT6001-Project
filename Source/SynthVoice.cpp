@@ -1,19 +1,19 @@
 #include "SynthVoice.h"
 #include "SynthSound.h"
 
-//what the hell is this
-//Initalise Resonant Filters
-SynthVoice::SynthVoice()//:fundamentalResonator(juce::dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, fundimentalFreq, fundimentalRes))
+SynthVoice::SynthVoice()
 {   
+    fundimentalFreq = 130;
+
     shape = 0;
     spread = 1;
+    decay = 200;
 
-    fundimentalFreq = 130;
     freqBank.resize(maxResonators);
     for (auto i = 0; i < maxResonators; i++)
         freqBank[i] = 440.0f;
 
-    fundimentalRes = 200;
+    
     qBank.resize(maxResonators);
     for (auto i = 0; i < maxResonators; i++)
         qBank[i] = 200.0f;
@@ -29,6 +29,11 @@ SynthVoice::SynthVoice()//:fundamentalResonator(juce::dsp::IIR::Coefficients<flo
     harmoAttenuatorBank.resize(maxResonators);
     for (auto i = 0; i < maxResonators; i++)
         harmoAttenuatorBank[i].setGainLinear(1.0f);
+
+    outputGain.setGainLinear(outputGainValue);
+
+    // tanh soft clipping lamda function
+    softClipper.functionToUse = [] (float x) { return std::tanh(x); };
 }
 
 bool SynthVoice::canPlaySound(juce::SynthesiserSound* sound)
@@ -49,7 +54,6 @@ void SynthVoice::startNote(int midiNoteNumber, float velocity, juce::Synthesiser
 
 void SynthVoice::stopNote(float velocity, bool allowTailOff)
 {
-    //need a way to end note and clearCurrentNote()
     exciter.noteOff();
     //punchModulationEnvelope.noteOff();
 
@@ -101,7 +105,6 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
     // Apply Exciter Envelope
     exciter.applyEnvelopeToBuffer(baseBuffer, 0, numSamples);
     
-
     // Process buffers through filterBank
     for (auto i = 0; i < numResonators; i++)
     {
@@ -129,8 +132,11 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
         // Apply gain and attenuation
         resonatorMakeUpGainBank[i].process(juce::dsp::ProcessContextReplacing<float>(block));
         harmoAttenuatorBank[i].process(juce::dsp::ProcessContextReplacing<float>(block));
-    }
 
+        // Apply output gain
+        outputGain.setGainLinear(outputGainValue);
+        outputGain.process(juce::dsp::ProcessContextReplacing<float>(block));
+    }
 
     // Mix bufferBank to outputBuffer
     for (int channel = 0; channel < numChannels; ++channel)
@@ -140,6 +146,10 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
             outputBuffer.addFrom(channel, startSample, bufferBank[i], channel, 0, numSamples);
         }
     }
+
+    // Apply soft clipping
+    juce::dsp::AudioBlock<float> block(outputBuffer);
+    softClipper.process(juce::dsp::ProcessContextReplacing<float>(block));
 
     if (!exciter.isActive())
     {
@@ -164,6 +174,8 @@ void SynthVoice::prepare(const juce::dsp::ProcessSpec& spec)
         filterBank[i].prepare(spec);
     }
 
+    softClipper.prepare(spec);
+
     reset();
 }
 
@@ -178,11 +190,13 @@ void SynthVoice::reset()
         harmoAttenuatorBank[i].reset();
         filterBank[i].reset();
     }
+
+    softClipper.reset();
 }
 
 void SynthVoice::updateParameters() //change name to updateResonators
 {
-    //update filters
+    // Update filter coefs
     auto prevHarmonicRatio = 1;
     for (auto i = 0; i < numResonators; i++)
     {
@@ -195,24 +209,22 @@ void SynthVoice::updateParameters() //change name to updateResonators
 
         if (i < 1)
         {
-            //Tread fundimental resinator differently
+            // Treat fundimental resinator differently
             freq = fundimentalFreq;
             if (freq > sampleRate * 0.5 || freq < 20.0f)
             {
-                //if freq is higher than niqust set gain to 0
-                freq = 440;     //set to arbitrary value, resinator is muted anyway
+                // If freq is higher than niqust set gain to 0
+                freq = 440;     // Set to arbitrary value, resinator is muted anyway
                 gainOn = 0;
             }
 
-            q = fundimentalRes;
+            q = decay;
 
             qBank[0] = q;
             freqBank[0] = freq;
         }
         else
-        {
-            //print the freqs out, see if they are correct, I think they are not!
-            
+        {   
             float squareHarmonicRatio = (prevHarmonicRatio * (spread + 1)); //+1?, truncate to only get harmoic ratios
             float circularHarmonicRatio = (prevHarmonicRatio * spread) * circularModes[i-1];
 
@@ -224,10 +236,9 @@ void SynthVoice::updateParameters() //change name to updateResonators
             {
                 freq = 440;  
                 gainOn = 0;
-                //can used std::fmax and fmin 
             }
 
-            q = fundimentalRes;
+            q = decay;
 
             qBank[i] = q;
             freqBank[i] = freq;
@@ -255,7 +266,7 @@ void SynthVoice::updateParameters() //change name to updateResonators
 }
 
 //==============================================================================
-//Setters
+// Setters
 void SynthVoice::setFundamentalFreq(float newFundimentalFreq)
 {
     if (newFundimentalFreq < 20.0f)
@@ -263,8 +274,8 @@ void SynthVoice::setFundamentalFreq(float newFundimentalFreq)
 
     fundimentalFreq = newFundimentalFreq; 
 }
-void SynthVoice::setFundamentalRes(float newFundimentalRes) { fundimentalRes = newFundimentalRes; }
-void SynthVoice::setResonatorAmount(float newHarmo)    // rename setHarmo 
+void SynthVoice::setDecay(float newDecay) { decay = newDecay; }
+void SynthVoice::setHarmo(float newHarmo)
 {
     harmo = newHarmo;
     // numResonators one bigger than harmo
@@ -279,11 +290,12 @@ void SynthVoice::setExciterAttack(float newExciterAttack) { exciterAttack = newE
 void SynthVoice::setExciterRelease(float newExciterRelease) { exciterRelease = newExciterRelease; }
 void SynthVoice::setExciterNoiseAmount(float newExciterNoiseAmount) { exciterNoiseAmount = newExciterNoiseAmount; }
 void SynthVoice::setPunchRelease(float newPunchRelease) { punchRelease = newPunchRelease; }
+void SynthVoice::setOutputGainValue(float newOutputGainValue) { outputGainValue = newOutputGainValue; }
 
-//RENAME TO MAKE MORE SENSE
+//==============================================================================
+// Helpers
 float SynthVoice::linearInterpolator(float inputOne, float inputTwo, float mix)
 {
-    //basic linear interpreter
     auto output = (inputOne * (1.0f - mix)) + (inputTwo * mix);
     return output;
 }

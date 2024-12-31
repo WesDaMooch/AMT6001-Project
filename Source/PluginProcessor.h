@@ -16,6 +16,18 @@
 * and another for renderNextBlock, stop using the same variable for both...
 *
 * CPU usage seems pretty bad...
+* 
+* 
+* TO-DO LIST
+* Fix exciter attack slider crash and expose all sliders to host.
+* Replace UI Keyboard with a trigger button.
+* 
+* Add decompose section, ways to take the generated sound apart in time and space - this was a big part of the plugin concept.
+* Slider 'SPACE' or 'STEREO' randomly places a harmonic overtone (resonant filter) in the L or R buffer.
+* 'DECOMP' slider delays harmonics in time. 
+* Can make wind chime sounds and can get a bit granular with short decay times (tested in Max/MSP).
+* 
+* Lots of UI impovements can be made - a sytle a bit like Shakmat Modular with the diagonal stripes.
 */
 
 
@@ -69,7 +81,7 @@ public:
 
 
     juce::MidiMessageCollector& getMidiMessageCollector();
-    void setRes(double newRes); 
+    void setDecay(double newDecay); 
     void setHarmonics(double newHarmonics);
     void setSpread(double newSpread);
     void setShape(double newShape);
@@ -80,32 +92,31 @@ public:
     juce::NormalisableRange<double> getExciterAttackRange();
     juce::AudioParameterFloat* getExciterAttackParameter();
 
-    void setRelease(double newRelease);
+    void setExciterRelease(double newExciterRelease);
     void setExciterNoiseAmount(double newExciterNoiseAmount);
     void setPunchAmount(double newPunchAmount);
+
+    void setOutputGain(double newOutputGain);
 
 private:
     //==============================================================================
     juce::Synthesiser synth;
 
     juce::MidiMessageCollector midiMessageCollector;
-    
-    //have defaults here?
-    double res; 
-    double harmonics = 6;
-    double spread = 1; 
-    double shape = 0;
     int pitchOffset = 0;
 
     juce::AudioParameterFloat* exciterAttack;
     juce::NormalisableRange<double> exciterAttackRange;
+    float exciterRelease = 1;
+    float exciterNoiseAmount = 0;
+    float punchAmount = 0;
 
-    //change to floats and convert in set funcs
-    double release = 1; 
-
-    double exciterNoiseAmount = 0;
-
-    double punchAmount = 0;
+    float decay;
+    float harmonics = 6;
+    float spread = 1;
+    float shape = 0;
+    
+    float outputGain = 0.7;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ReSoundAudioProcessor)
 };

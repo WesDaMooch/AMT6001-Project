@@ -48,7 +48,7 @@ namespace customColours
 
     //Accent Colours
     juce::Colour coquelicot = juce::Colour(241, 80, 37);
-}
+} //Sort the colours out...
 
 namespace gridUI
 {
@@ -57,38 +57,25 @@ namespace gridUI
         const float columnOne = 40;
         const float columnTwo = 100;
 
-        const float rowOne = 120;
-        const float rowTwo = 300;
+        const float rowOne = 125;
+        const float rowTwo = 305;
 
     }
-    const float columnOne = 40;
-    const float columnTwo = columnOne + 60;
-    const float columnThree = 210;
-    const float columnFour = columnThree + 60;
-    const float columnFive = columnFour + 60;
-    
-    const float rowZero = 20;
-    const float rowOne = 100;
-    const float rowTwo = 300;
-    const float rowThree = rowTwo + 60;
-}
+    namespace resonatorBox
+    {
+        const float columnOne = 210; 
+        const float columnTwo = 270; 
+        const float columnThree = 330;
 
-//maybe remove
-void styleDial(juce::Slider& slider, double minRange, double maxRange, double defaultValue,
-    double interval=0, bool textBox=false)
-{   
-    //this text not working
-    juce::Slider::TextEntryBoxPosition textBoxStyle = juce::Slider::NoTextBox;
-    if (textBox == true)
-        juce::Slider::TextEntryBoxPosition textBoxStyle = juce::Slider::TextBoxBelow;
-
-    slider.setSliderStyle(juce::Slider::Rotary);
-    slider.setColour(juce::Slider::ColourIds::rotarySliderOutlineColourId, customColours::eerieBlack);
-    slider.setColour(juce::Slider::ColourIds::rotarySliderFillColourId, customColours::coquelicot);
-    slider.setColour(juce::Slider::ColourIds::thumbColourId, customColours::coquelicot);
-    slider.setRange(minRange, maxRange, interval);
-    slider.setValue(defaultValue);
-    slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 90, 0);
+        const float rowOne = 70; 
+        const float rowTwo = 260; 
+        const float rowThree = rowTwo + 60;
+    }
+    namespace outputGainBox
+    {
+        const float columnOne = 210;
+        const float rowOne = 445;
+    }
 }
 
 void styleVerticalSlider(juce::Slider& slider, double minRange, double maxRange, double defaultValue,
@@ -116,7 +103,6 @@ void styleHorizontalSlider(juce::Slider& slider, double minRange, double maxRang
     slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 90, 0);
 }
 
-
 void drawVerticalLabel(juce::Graphics& g, juce::Font font, juce::Colour colour,
     const juce::String name, float targetSliderX, float targetSliderY, double value, int precision=2)
 {
@@ -131,19 +117,15 @@ void drawVerticalLabel(juce::Graphics& g, juce::Font font, juce::Colour colour,
     else
         precision = 2;
 
-
-    auto sliderSize = 133; 
+    float sliderSize = 133; 
 
     // Convert double to string with decimal precision
     std::stringstream stream;
     stream << std::fixed << std::setprecision(precision) << value;
     std::string valueString = stream.str();
 
-    float valueWidth = juce::Font().getStringWidth(valueString);
-
-    //float fontWidth = font.getStringWidthFloat(name);
     float horizontalLabelPadding = 38.0f;
-    float verticalValuePadding = 40.0f;
+    float verticalValuePadding = 45.0f;
 
     float labelX = targetSliderX + horizontalLabelPadding;
     float labelY = targetSliderY + 20.0f;
@@ -209,7 +191,7 @@ ReSoundAudioProcessorEditor::ReSoundAudioProcessorEditor (ReSoundAudioProcessor&
     //Use custom LookAndFeel Class
     juce::LookAndFeel::setDefaultLookAndFeel(&myCustomLookAndFeel);
 
-    setSize (500, 570);
+    setSize (420, 570);
     setResizable(true, true); 
 
     //UI elements
@@ -228,7 +210,6 @@ ReSoundAudioProcessorEditor::ReSoundAudioProcessorEditor (ReSoundAudioProcessor&
     attackSlider.addListener(this);
     addAndMakeVisible(&attackSlider);
 
-
     // Exciter Release
     styleVerticalSlider(releaseSlider, 0.1f, 100.0f, 1.0f); 
     releaseSlider.addListener(this);
@@ -241,14 +222,14 @@ ReSoundAudioProcessorEditor::ReSoundAudioProcessorEditor (ReSoundAudioProcessor&
     styleVerticalSlider(punchAmountSlider, 0.0f, 100.0f, 0.0f);
     punchAmountSlider.addListener(this);
     addAndMakeVisible(&punchAmountSlider);
-    //Harmo Amount
+    // Harmo Amount
     styleVerticalSlider(harmoSlider, 1.0f, 12.0f, 6.0f);
     harmoSlider.addListener(this);
     addAndMakeVisible(&harmoSlider);
-    // Res
-    styleVerticalSlider(resonanceSlider, 1.0f, 300.0f, 100.0f);
-    resonanceSlider.addListener(this); 
-    addAndMakeVisible(&resonanceSlider);
+    // Decay
+    styleVerticalSlider(decaySlider, 1.0f, 300.0f, 100.0f);
+    decaySlider.addListener(this); 
+    addAndMakeVisible(&decaySlider);
     // Spread Amount
     styleVerticalSlider(spreadSlider, 0.5f, 3.0f, 1.0f);
     spreadSlider.addListener(this);
@@ -261,6 +242,10 @@ ReSoundAudioProcessorEditor::ReSoundAudioProcessorEditor (ReSoundAudioProcessor&
     styleHorizontalSlider(pitchSlider, -12, 12, 0, 1);
     pitchSlider.addListener(this);
     addAndMakeVisible(&pitchSlider);
+    // Output Gain
+    styleHorizontalSlider(outputGainSlider, 0.0f, 1.5f, 0.7f);
+    outputGainSlider.addListener(this);
+    addAndMakeVisible(&outputGainSlider);
 
     for (auto* param : audioProcessor.getParameters())
     {
@@ -279,100 +264,111 @@ ReSoundAudioProcessorEditor::~ReSoundAudioProcessorEditor()
 //==============================================================================
 void ReSoundAudioProcessorEditor::paint (juce::Graphics& g)
 {
-
-       
-    //Background Colour
-    //g.fillAll(customColours::eerieBlack);
-    g.fillAll(juce::Colour(31, 31, 31));
-
-    g.setColour(customColours::isabelline);
-
-    // Draw Titel
-    juce::Font font = juce::Font("Bahnschrift", 22.0f, juce::Font::bold);
-
-    g.setFont(font);
-    g.drawText(juce::String("ReSound"), 10, 10, 100, juce::Justification::centredLeft, false);
-
     auto window = getBounds().toFloat();
 
-    auto rectOneSize = 140.0f;
-    auto rectTwoSize = 200.0f;
+    auto fontHeight = 40.0f;
+    auto titelY = 28.0f;
 
-    auto rectTopPadding = 25.0f;
-    auto rectBottomPadding = 120.0f;
-    auto rectLeftPadding = 25.0f;
-    auto rectCornerSize = 10.0f;
+    auto boxCornerSize = 10.0f;
 
+    auto exciterTitelY = 75.0f;
     auto exciterBoxX = 25.0f;
-    auto exciterBoxY = 100.0f;
+    auto exciterBoxY = 80.0f;
     auto exciterBoxWidth = 140.0f;
-    auto exciterBowHeight = 365;
-        
+    auto exciterBoxHeight = 400.0f;
 
+    auto resonatorTitelY = 20.0f;
+    auto resonatorBoxX = 190.0f;
+    auto resonatorBoxY = 25.0f;
+    auto resonatorBoxWidth = 200.0f;
+    auto resonatorBoxHeight = 350.0f;
+
+    auto gainBoxX = 190.0f;
+    auto gainBoxY = 400.0f;
+    auto gainBoxWidth = 200.0f;
+    auto gainBoxHeight = 80.0f;
+
+    //Background Colour
+    g.fillAll(juce::Colour(31, 31, 31));
+   
     // Exciter box
-    //g.fillRoundedRectangle(rectLeftPadding, 100, rectOneSize,
-        //490 - rectBottomPadding, rectCornerSize);
-
+    g.setColour(customColours::isabelline); // Box colour
     g.fillRoundedRectangle(exciterBoxX, exciterBoxY, exciterBoxWidth,
-        exciterBowHeight, rectCornerSize);
-    //window.getHeight()
+        exciterBoxHeight, boxCornerSize);
+    // Resonator box
+    g.fillRoundedRectangle(resonatorBoxX, resonatorBoxY, resonatorBoxWidth,
+        resonatorBoxHeight, boxCornerSize);
 
-    g.fillRoundedRectangle(rectOneSize + rectLeftPadding * 2, rectTopPadding, rectTwoSize,
-        window.getHeight() - rectBottomPadding, rectCornerSize);
+    // Gain box
+    g.fillRoundedRectangle(gainBoxX, gainBoxY, gainBoxWidth,
+        gainBoxHeight, boxCornerSize);
+
 
     // Draw horizontal lines
-    g.setColour(juce::Colours::grey);
     //const float dashLength[] = { 5, 5 };
     //g.drawDashedLine(juce::Line<float>(0, 0, 100, 100), dashLength, 2, 1.5f);
 
+    // Draw titel
+    g.setColour(juce::Colours::grey);   // Titel colour
+    juce::Font titelFont = juce::Font("Bahnschrift", 28.0f, juce::Font::bold);
+    g.setFont(titelFont);
+    g.drawText(juce::String("ReSound"), exciterBoxX, titelY, exciterBoxWidth, fontHeight, juce::Justification::centred, false);
+    // Draw box titel
+    juce::Font boxTitelFont = juce::Font("Bahnschrift", 22.0f, juce::Font::bold);
+    g.setFont(boxTitelFont);
+    g.drawText(juce::String("exciter"), exciterBoxX, exciterTitelY, exciterBoxWidth, fontHeight, juce::Justification::centredBottom, false);
+    // Draw resonator titel
+    g.drawText(juce::String("resonator"), resonatorBoxX, resonatorTitelY, resonatorBoxWidth, fontHeight, juce::Justification::centredBottom, false);
+
     // Draw Labels
     // Bahnschrift is a good font, is it on mac?
-    //juce::Font font = juce::Font("Bahnschrift", 22.0f, juce::Font::bold);
+    juce::Font labelFont = juce::Font("Bahnschrift", 22.0f, juce::Font::bold);
     juce::Colour fontColour = juce::Colours::grey;
 
-    drawVerticalLabel(g, font, fontColour, juce::String("ATK"),
+    drawVerticalLabel(g, labelFont, fontColour, juce::String("ATK"),
         gridUI::exciterBox::columnOne, gridUI::exciterBox::rowOne, attackSlider.getValue());
 
-    drawVerticalLabel(g, font, fontColour, juce::String("REL"),
+    drawVerticalLabel(g, labelFont, fontColour, juce::String("REL"),
         gridUI::exciterBox::columnTwo, gridUI::exciterBox::rowOne, releaseSlider.getValue(), 0);
 
-    drawVerticalLabel(g, font, fontColour, juce::String("NOISE"),
+    drawVerticalLabel(g, labelFont, fontColour, juce::String("NOISE"),
         gridUI::exciterBox::columnOne, gridUI::exciterBox::rowTwo, exciterNoiseAmountSlider.getValue());
 
-    drawVerticalLabel(g, font, fontColour, juce::String("PUNCH"),
+    drawVerticalLabel(g, labelFont, fontColour, juce::String("PUNCH"),
         gridUI::exciterBox::columnTwo, gridUI::exciterBox::rowTwo, punchAmountSlider.getValue());
 
-    drawVerticalLabel(g, font, fontColour, juce::String("HARMO"),
-        gridUI::columnThree, gridUI::rowOne, harmoSlider.getValue());
+    drawVerticalLabel(g, labelFont, fontColour, juce::String("HARMO"),
+        gridUI::resonatorBox::columnOne, gridUI::resonatorBox::rowOne, harmoSlider.getValue());
 
-    drawVerticalLabel(g, font, fontColour, juce::String("RES"),
-        gridUI::columnFour, gridUI::rowOne, resonanceSlider.getValue(), 0);
+    drawVerticalLabel(g, labelFont, fontColour, juce::String("DECAY"),
+        gridUI::resonatorBox::columnTwo, gridUI::resonatorBox::rowOne, decaySlider.getValue(), 0);
 
-    drawVerticalLabel(g, font, fontColour, juce::String("SPREAD"),
-        gridUI::columnFive, gridUI::rowOne, spreadSlider.getValue());
+    drawVerticalLabel(g, labelFont, fontColour, juce::String("SPREAD"),
+        gridUI::resonatorBox::columnThree, gridUI::resonatorBox::rowOne, spreadSlider.getValue());
 
-    drawHorizontalLabel(g, font, fontColour, juce::String("SHAPE"),
-        gridUI::columnThree, gridUI::rowTwo, shapeSlider.getValue());
+    drawHorizontalLabel(g, labelFont, fontColour, juce::String("SHAPE"),
+        gridUI::resonatorBox::columnOne, gridUI::resonatorBox::rowTwo, shapeSlider.getValue());
 
-    drawHorizontalLabel(g, font, fontColour, juce::String("PITCH"),
-        gridUI::columnThree, gridUI::rowThree, pitchSlider.getValue(), 0);
+    drawHorizontalLabel(g, labelFont, fontColour, juce::String("PITCH"),
+        gridUI::resonatorBox::columnOne, gridUI::resonatorBox::rowThree, pitchSlider.getValue(), 0);
+
+    drawHorizontalLabel(g, labelFont, fontColour, juce::String("GAIN"),
+        gridUI::outputGainBox::columnOne, gridUI::outputGainBox::rowOne, outputGainSlider.getValue());
 }
 
 void ReSoundAudioProcessorEditor::resized()
 {
-    auto keyboardHeight = 64;
+    auto keyboardHeight = 64.0f;
     keyboardComponent.setBounds(0, getHeight()-keyboardHeight, getWidth(), keyboardHeight);
 
-    auto dialSize = 70;
-
-    auto verticalSliderHeight = 150;
-    auto verticalSliderWidth = 20;
-    auto horizontalSliderWidth = verticalSliderHeight;
+    auto verticalSliderHeight = 150.0f;
+    auto verticalSliderWidth = 20.0f;
+    auto horizontalSliderWidth = verticalSliderHeight + 10.0f;
     auto horizontalSliderHeight = verticalSliderWidth;
 
-    auto labelHeight = 30;
+    auto labelHeight = 30.0f;
 
-    // Exciter
+    // Exciter params
     attackSlider.setBounds(gridUI::exciterBox::columnOne, gridUI::exciterBox::rowOne,
         verticalSliderWidth, verticalSliderHeight);
 
@@ -385,33 +381,37 @@ void ReSoundAudioProcessorEditor::resized()
     punchAmountSlider.setBounds(gridUI::exciterBox::columnTwo, gridUI::exciterBox::rowTwo,
         verticalSliderWidth, verticalSliderHeight);
 
-    // Resonant Body
-    harmoSlider.setBounds(gridUI::columnThree, gridUI::rowOne,
+    // Resonator params
+    harmoSlider.setBounds(gridUI::resonatorBox::columnOne, gridUI::resonatorBox::rowOne,
         verticalSliderWidth, verticalSliderHeight);
 
-    resonanceSlider.setBounds(gridUI::columnFour, gridUI::rowOne,
+   decaySlider.setBounds(gridUI::resonatorBox::columnTwo, gridUI::resonatorBox::rowOne,
         verticalSliderWidth, verticalSliderHeight);
 
-    spreadSlider.setBounds(gridUI::columnFive, gridUI::rowOne,
+    spreadSlider.setBounds(gridUI::resonatorBox::columnThree, gridUI::resonatorBox::rowOne,
         verticalSliderWidth, verticalSliderHeight);
 
-    shapeSlider.setBounds(gridUI::columnThree, gridUI::rowTwo,
+    shapeSlider.setBounds(gridUI::resonatorBox::columnOne, gridUI::resonatorBox::rowTwo,
         horizontalSliderWidth, horizontalSliderHeight);
 
-    pitchSlider.setBounds(gridUI::columnThree, gridUI::rowThree,
+    pitchSlider.setBounds(gridUI::resonatorBox::columnOne, gridUI::resonatorBox::rowThree,
+        horizontalSliderWidth, horizontalSliderHeight);
+
+    outputGainSlider.setBounds(gridUI::outputGainBox::columnOne, gridUI::outputGainBox::rowOne,
         horizontalSliderWidth, horizontalSliderHeight);
 }
 
 void ReSoundAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
     // editor -> processor -> voice
+    // would like to set voice from editor, maybe this is a bad idea
     if (slider == &harmoSlider)
     {
             audioProcessor.setHarmonics(slider->getValue());
     }
-    else if (slider == &resonanceSlider)
+    else if (slider == &decaySlider)
     { 
-        audioProcessor.setRes(slider->getValue());
+        audioProcessor.setDecay(slider->getValue());
     }
     else if (slider == &spreadSlider)
     {
@@ -431,7 +431,7 @@ void ReSoundAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     }
     else if (slider == &releaseSlider)
     {
-        audioProcessor.setRelease(slider->getValue());
+        audioProcessor.setExciterRelease(slider->getValue());
     }
     else if (slider == &exciterNoiseAmountSlider)
     {
@@ -440,6 +440,10 @@ void ReSoundAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     else if (slider == &punchAmountSlider)
     {
         audioProcessor.setPunchAmount(slider->getValue());
+    }
+    else if (slider == &outputGainSlider)
+    {
+        audioProcessor.setOutputGain(slider->getValue());
     }
 
     // Repaint UI if slider value change

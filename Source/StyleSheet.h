@@ -12,9 +12,6 @@ namespace juce
 class CustomLookAndFeel : public juce::LookAndFeel_V4
 {
 public:
-	void drawRotarySlider(Graphics& g, int x, int y, int width, int height, float sliderPos,
-		float rotaryStartAngle, float rotaryEndAngle, Slider& slider);
-
 	void drawLinearSlider(Graphics& g, int x, int y, int width, int height, float sliderPos,
 		float minSliderPos, float maxSliderPos, const Slider::SliderStyle style, Slider& slider);
 };

@@ -28,8 +28,6 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override; 
 
-    
-
 private:
      
     void sliderValueChanged(juce::Slider* slider) override;
@@ -40,23 +38,22 @@ private:
 
     juce::CustomLookAndFeel myCustomLookAndFeel;
 
-    // Exciter pramas
+    // Exciter sliders
     juce::Slider attackSlider;
     juce::Slider releaseSlider;
     juce::Slider exciterNoiseAmountSlider;
     juce::Slider punchAmountSlider;
-
-    //Replace With DECAY
+    // Resonator sliders
     juce::Slider harmoSlider;
-    juce::Slider resonanceSlider; 
+    juce::Slider decaySlider;
     juce::Slider spreadSlider;
     juce::Slider shapeSlider;
     juce::Slider pitchSlider;
-
-    juce::MidiKeyboardState keyboardState;          //midi keyboard in standalone
-    juce::MidiKeyboardComponent keyboardComponent;  //the keyboard UI
-
-
+    // Gain slider
+    juce::Slider outputGainSlider;
+    // UI keyboard
+    juce::MidiKeyboardState keyboardState;  // Midi keyboard for standalone testing
+    juce::MidiKeyboardComponent keyboardComponent;  
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ReSoundAudioProcessorEditor)
 };
