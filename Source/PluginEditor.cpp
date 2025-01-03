@@ -11,44 +11,10 @@
 
 namespace customColours
 {
-    //Colours
-
-    //Dark Greys:
-    //Jet = 60, 55, 68
-    //Onyx = 54, 57, 70
-    //Gunmetal = 43, 47, 59
-    //Raisin black = 34, 38, 47
-    //Eerie black = 26, 29, 35, or 31, 31, 31
-    //Night = 17, 19, 23
-
-    //Light Greys:
-    //Isabelline = 242, 239, 234
-    //Plat = 221, 221, 221
-    //Timber wolf = 214, 214, 214
-
-    //Accents:
-    //orange = 245, 143, 41
-    //Coquelicot = 241, 80, 37 
-    //Blue (Munsell) = #34AA7
-    //Pine Greesn = 19, 111, 91
-    
-    //Light Colours
-    //juce::Colour isabelline = juce::Colour(242, 239, 234);
-    juce::Colour isabelline = juce::Colour(221, 221, 221);
-    juce::Colour platinum = juce::Colour(221, 221, 221);
-    juce::Colour timberwolf = juce::Colour(214, 214, 214);
-
-    //Dark Greys
-    //juce::Colour gray33 = juce::Colour(84, 84, 84);
-    juce::Colour gray33 = juce::Colour(59,59,59);
-    juce::Colour jet = juce::Colour(60, 55, 68);
-    juce::Colour gunmetal = juce::Colour(43, 47, 59);
-    //juce::Colour eerieBlack = juce::Colour(31, 31, 31);
-    juce::Colour eerieBlack = juce::Colours::grey;
-
-    //Accent Colours
-    juce::Colour coquelicot = juce::Colour(241, 80, 37);
-} //Sort the colours out...
+    const juce::Colour isabelline = juce::Colour(221, 221, 221);
+    const juce::Colour gunmetal = juce::Colour(59, 59, 59);
+    const juce::Colour eerieBlack = juce::Colour(31, 31, 31);
+}
 
 namespace gridUI
 {
@@ -59,7 +25,6 @@ namespace gridUI
 
         const float rowOne = 125;
         const float rowTwo = 305;
-
     }
     namespace resonatorBox
     {
@@ -81,11 +46,10 @@ namespace gridUI
 void styleVerticalSlider(juce::Slider& slider, double minRange, double maxRange, double defaultValue,
     double interval=0)
 {
-    //this could be put in CustomLookAndFeel
+    // Could be put in CustomLookAndFeel
     slider.setSliderStyle(juce::Slider::LinearVertical);
-    slider.setColour(juce::Slider::ColourIds::trackColourId, customColours::coquelicot);
-    slider.setColour(juce::Slider::ColourIds::thumbColourId, customColours::gray33);
-    slider.setColour(juce::Slider::ColourIds::backgroundColourId, customColours::eerieBlack);
+    slider.setColour(juce::Slider::ColourIds::thumbColourId, customColours::gunmetal);
+    slider.setColour(juce::Slider::ColourIds::backgroundColourId, juce::Colours::grey);
     slider.setRange(minRange, maxRange, interval);
     slider.setValue(defaultValue);
     slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 90, 0);
@@ -95,9 +59,9 @@ void styleHorizontalSlider(juce::Slider& slider, double minRange, double maxRang
     double interval = 0)
 {
     slider.setSliderStyle(juce::Slider::LinearHorizontal);
-    slider.setColour(juce::Slider::ColourIds::trackColourId, customColours::eerieBlack);
-    slider.setColour(juce::Slider::ColourIds::thumbColourId, customColours::gray33);
-    slider.setColour(juce::Slider::ColourIds::backgroundColourId, customColours::eerieBlack);
+    slider.setColour(juce::Slider::ColourIds::trackColourId, juce::Colours::grey);
+    slider.setColour(juce::Slider::ColourIds::thumbColourId, customColours::gunmetal);
+    slider.setColour(juce::Slider::ColourIds::backgroundColourId, juce::Colours::grey);
     slider.setRange(minRange, maxRange, interval);
     slider.setValue(defaultValue);
     slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 90, 0);
@@ -106,10 +70,10 @@ void styleHorizontalSlider(juce::Slider& slider, double minRange, double maxRang
 void drawVerticalLabel(juce::Graphics& g, juce::Font font, juce::Colour colour,
     const juce::String name, float targetSliderX, float targetSliderY, double value, int precision=2)
 {
-    //draw a vertical label for slider
+    // Draw a vertical label for slider
 
-    //make value box bigger...
-
+    // Calculate precision based on value
+    // Always display three digits
     if (value >= 100)
         precision = 0;
     else if (value >= 10 && value < 100)
@@ -142,6 +106,7 @@ void drawVerticalLabel(juce::Graphics& g, juce::Font font, juce::Colour colour,
 
     auto pathBounds = p.getBounds();
 
+    // Rotate
     p.applyTransform(juce::AffineTransform().rotated(juce::MathConstants<float>::halfPi,
         pathBounds.getX(), pathBounds.getY()));
 
@@ -152,7 +117,7 @@ void drawVerticalLabel(juce::Graphics& g, juce::Font font, juce::Colour colour,
 void drawHorizontalLabel(juce::Graphics& g, juce::Font font, juce::Colour colour,
     const juce::String name, float targetSliderX, float targetSliderY, double value, int precision=2)
 {
-    //draw a vertical label for slider
+    // Draw a horizontal label for slider
     auto sliderSize = 133; // get this from somewhere, put in gridUI?
 
     std::stringstream stream;
@@ -180,7 +145,6 @@ void drawHorizontalLabel(juce::Graphics& g, juce::Font font, juce::Colour colour
 
     g.setColour(colour);
     g.fillPath(p);
-
 }
 
 //==============================================================================
@@ -188,13 +152,13 @@ ReSoundAudioProcessorEditor::ReSoundAudioProcessorEditor (ReSoundAudioProcessor&
     : AudioProcessorEditor (&p), audioProcessor (p),
     keyboardComponent(keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard)
 {
-    //Use custom LookAndFeel Class
+    // Use custom LookAndFeel Class
     juce::LookAndFeel::setDefaultLookAndFeel(&myCustomLookAndFeel);
 
     setSize (420, 570);
-    setResizable(true, true); 
+    //setResizable(true, true); 
 
-    //UI elements
+    // UI elements
     addAndMakeVisible(&keyboardComponent);
     keyboardState.addListener(&audioProcessor.getMidiMessageCollector());
 
@@ -204,9 +168,8 @@ ReSoundAudioProcessorEditor::ReSoundAudioProcessorEditor (ReSoundAudioProcessor&
     attackSlider.setNormalisableRange(audioProcessor.getExciterAttackRange());
     attackSlider.setValue(audioProcessor.getExciterAttack());
     attackSlider.setSliderStyle(juce::Slider::LinearVertical);
-    attackSlider.setColour(juce::Slider::ColourIds::trackColourId, customColours::coquelicot);
-    attackSlider.setColour(juce::Slider::ColourIds::thumbColourId, customColours::gray33);
-    attackSlider.setColour(juce::Slider::ColourIds::backgroundColourId, customColours::eerieBlack);
+    attackSlider.setColour(juce::Slider::ColourIds::thumbColourId, customColours::gunmetal);
+    attackSlider.setColour(juce::Slider::ColourIds::backgroundColourId, juce::Colours::grey);
     attackSlider.addListener(this);
     addAndMakeVisible(&attackSlider);
 
@@ -288,8 +251,8 @@ void ReSoundAudioProcessorEditor::paint (juce::Graphics& g)
     auto gainBoxWidth = 200.0f;
     auto gainBoxHeight = 80.0f;
 
-    //Background Colour
-    g.fillAll(juce::Colour(31, 31, 31));
+    // Background Colour
+    g.fillAll(customColours::eerieBlack);
    
     // Exciter box
     g.setColour(customColours::isabelline); // Box colour
@@ -368,7 +331,7 @@ void ReSoundAudioProcessorEditor::resized()
 
     auto labelHeight = 30.0f;
 
-    // Exciter params
+    // Exciter sliders
     attackSlider.setBounds(gridUI::exciterBox::columnOne, gridUI::exciterBox::rowOne,
         verticalSliderWidth, verticalSliderHeight);
 
@@ -381,7 +344,7 @@ void ReSoundAudioProcessorEditor::resized()
     punchAmountSlider.setBounds(gridUI::exciterBox::columnTwo, gridUI::exciterBox::rowTwo,
         verticalSliderWidth, verticalSliderHeight);
 
-    // Resonator params
+    // Resonator sliders
     harmoSlider.setBounds(gridUI::resonatorBox::columnOne, gridUI::resonatorBox::rowOne,
         verticalSliderWidth, verticalSliderHeight);
 
@@ -397,6 +360,7 @@ void ReSoundAudioProcessorEditor::resized()
     pitchSlider.setBounds(gridUI::resonatorBox::columnOne, gridUI::resonatorBox::rowThree,
         horizontalSliderWidth, horizontalSliderHeight);
 
+    // Output gain slider
     outputGainSlider.setBounds(gridUI::outputGainBox::columnOne, gridUI::outputGainBox::rowOne,
         horizontalSliderWidth, horizontalSliderHeight);
 }
@@ -404,7 +368,7 @@ void ReSoundAudioProcessorEditor::resized()
 void ReSoundAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
     // editor -> processor -> voice
-    // would like to set voice from editor, maybe this is a bad idea
+    // Would like to set voice from editor, maybe this is a bad idea
     if (slider == &harmoSlider)
     {
             audioProcessor.setHarmonics(slider->getValue());
@@ -446,7 +410,7 @@ void ReSoundAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
         audioProcessor.setOutputGain(slider->getValue());
     }
 
-    // Repaint UI if slider value change
+    // Repaint UI if slider value changes
     repaint();
 }
 

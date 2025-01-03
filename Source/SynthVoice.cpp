@@ -5,9 +5,9 @@ SynthVoice::SynthVoice()
 {   
     fundimentalFreq = 130;
 
-    shape = 0;
-    spread = 1;
-    decay = 200;
+    shape = 0.0f;
+    spread = 1.0f;
+    decay = 200.0f;
 
     freqBank.resize(maxResonators);
     for (auto i = 0; i < maxResonators; i++)
@@ -21,7 +21,7 @@ SynthVoice::SynthVoice()
     filterBank.resize(maxResonators);
     bufferBank.resize(maxResonators);
 
-    // Should vectors be dynamicly resized
+    // Should vectors be dynamicly resized...
     resonatorMakeUpGainBank.resize(maxResonators);
     for (auto i = 0; i < maxResonators; i++)
         resonatorMakeUpGainBank[i].setGainLinear(1.0f);
@@ -78,15 +78,15 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
 
     for (auto i = 0; i < maxResonators; i++)
     {
-        //Init bufferBank
+        // Init bufferBank
         bufferBank[i].setSize(numChannels, numSamples, false, false, true);
         bufferBank[i].clear();
     }
 
-    //Get first buffer in bank and fill with exciter
+    // Get first buffer in bank and fill with exciter
     juce::AudioBuffer<float> baseBuffer = bufferBank[0];
 
-    punchModulationEnvelope.applyEnvelopeToBuffer(baseBuffer, 0, numSamples);  // Quirk of ADSR, have to apple env to something
+    punchModulationEnvelope.applyEnvelopeToBuffer(baseBuffer, 0, numSamples);  // Quirk of ADSR, have to apply env for process sample to work
     baseBuffer.clear();
 
     for (int channel = 0; channel < numChannels; ++channel)
@@ -211,7 +211,7 @@ void SynthVoice::updateParameters() //change name to updateResonators
         {
             // Treat fundimental resinator differently
             freq = fundimentalFreq;
-            if (freq > sampleRate * 0.5 || freq < 20.0f)
+            if (freq > sampleRate * 0.5f || freq < 20.0f)
             {
                 // If freq is higher than niqust set gain to 0
                 freq = 440;     // Set to arbitrary value, resinator is muted anyway
@@ -232,7 +232,7 @@ void SynthVoice::updateParameters() //change name to updateResonators
 
             freq = harmonicRatio * fundimentalFreq;
 
-            if (freq > sampleRate * 0.5 || freq < 20.0f)
+            if (freq > sampleRate * 0.5f || freq < 20.0f)
             {
                 freq = 440;  
                 gainOn = 0;
@@ -253,7 +253,7 @@ void SynthVoice::updateParameters() //change name to updateResonators
         }
 
         // Set make up gain
-        resonatorMakeUpGainBank[i].setGainLinear(q * 0.5);
+        resonatorMakeUpGainBank[i].setGainLinear(q * 0.5f);
 
         harmoAttenuator *= gainOn;
         // Set attenuation from harmo param, only effects overtone harmonics
@@ -261,16 +261,19 @@ void SynthVoice::updateParameters() //change name to updateResonators
     }
     
     // Update exciter
-    exciter.setParameters(juce::ADSR::Parameters(exciterAttack * 0.001, exciterRelease * 0.001, 0, 0));
-    punchModulationEnvelope.setParameters(juce::ADSR::Parameters(0, (punchRelease * 5.0f) * 0.001, 0, 0));
+    exciter.setParameters(juce::ADSR::Parameters(exciterAttack * 0.001f, exciterRelease * 0.001f, 0.0f, 0.0f));
+    punchModulationEnvelope.setParameters(juce::ADSR::Parameters(0.0f, (punchRelease * 5.0f) * 0.001f, 0.0f, 0.0f));
 }
 
 //==============================================================================
 // Setters
 void SynthVoice::setFundamentalFreq(float newFundimentalFreq)
 {
-    if (newFundimentalFreq < 20.0f)
-        newFundimentalFreq = 20.0f;
+    //if (newFundimentalFreq < 20.0f)
+        //newFundimentalFreq = 20.0f;
+
+    newFundimentalFreq = std::fmax(newFundimentalFreq, 20.0f);
+    newFundimentalFreq = std::fmin(newFundimentalFreq, sampleRate * 0.5f);
 
     fundimentalFreq = newFundimentalFreq; 
 }

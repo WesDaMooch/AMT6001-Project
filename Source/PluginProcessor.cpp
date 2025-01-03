@@ -114,15 +114,15 @@ void ReSoundAudioProcessor::changeProgramName (int index, const juce::String& ne
 //==============================================================================
 void ReSoundAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {   
-    //Set Synth SampleRate
+    // Set Synth SampleRate
     synth.setCurrentPlaybackSampleRate(sampleRate);                    
     midiMessageCollector.reset(sampleRate);
 
     juce::dsp::ProcessSpec spec;
     spec.sampleRate = sampleRate;
     spec.maximumBlockSize = samplesPerBlock;
-    //spec.numChannels = getTotalNumInputChannels(); //THIS CAUSES AN ERROR, WHY DOES IT NOT RETURN 2
-    spec.numChannels = 2;
+    //spec.numChannels = getTotalNumInputChannels();    // THIS CAUSES AN ERROR, WHY DOES IT NOT RETURN 2??
+    spec.numChannels = 2;   //
 
     for (int i = 0; i < synth.getNumVoices(); i++)
     {
@@ -185,7 +185,7 @@ void ReSoundAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
             if (message.isNoteOn())
             {
                 int midiNote = message.getNoteNumber() + pitchOffset;
-                fundimentalFreq = message.getMidiNoteInHertz(midiNote);
+                fundimentalFreq = message.getMidiNoteInHertz(midiNote); // Convert MIDI to Hz
                 break;
             }
         }
@@ -199,8 +199,7 @@ void ReSoundAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce
         SynthVoice* voice = dynamic_cast<SynthVoice*>(synth.getVoice(i));
         if (voice != nullptr)
         {
-            //sets
-            //set first reson freq with midi
+            // SynthVoice sets
             voice->setFundamentalFreq(fundimentalFreq);
            
             voice->setExciterAttack(exciterAttack->get());
@@ -259,7 +258,7 @@ juce::MidiMessageCollector& ReSoundAudioProcessor::getMidiMessageCollector()
 
 //==============================================================================
 // Param setters
-// Body
+// Resonator
 void ReSoundAudioProcessor::setDecay(double newDecay) { decay = static_cast<float>(newDecay); }
 void ReSoundAudioProcessor::setHarmonics(double newHarmonics) { harmonics = static_cast<float>(newHarmonics); }
 void ReSoundAudioProcessor::setSpread(double newSpread) { spread = static_cast<float>(newSpread); }
@@ -267,6 +266,7 @@ void ReSoundAudioProcessor::setShape(double newShape) { shape = static_cast<floa
 void ReSoundAudioProcessor::setPitchOffset(double newPitchOffset) { pitchOffset = static_cast<float>(newPitchOffset); }
 
 // Exciter
+// Attack exposed to host
 double ReSoundAudioProcessor::getExciterAttack()
 {
     return exciterAttack->get();
@@ -285,8 +285,6 @@ juce::AudioParameterFloat* ReSoundAudioProcessor::getExciterAttackParameter()
 {
     return exciterAttack;
 }
-
-
 void ReSoundAudioProcessor::setExciterRelease(double newExciterRelease) { exciterRelease = static_cast<float>(newExciterRelease); }
 void ReSoundAudioProcessor::setExciterNoiseAmount(double newExciterNoiseAmount) { exciterNoiseAmount = static_cast<float>(newExciterNoiseAmount); }
 void ReSoundAudioProcessor::setPunchAmount(double newPunchAmount) { punchAmount = static_cast<float>(newPunchAmount); }
