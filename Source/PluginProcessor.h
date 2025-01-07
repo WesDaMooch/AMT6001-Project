@@ -7,7 +7,7 @@
 */
 /*
 * ISSUES
-* One parameter, Exciter Attack has been made open to the host DAW,
+* One parameter, Exciter Attack, has been made open to the host DAW,
 * however modulation of this parameter causes the plugin or DAW to crash.
 * Tested on FL Studio 20, no way to test in another DAW - maybe it will work in Ableton...
 * Have not opened up other parameters to the host as the current method has problems.
@@ -27,7 +27,7 @@
 * Fix exciter attack slider crash and expose all sliders to host.
 * Replace UI Keyboard with a trigger button.
 * 
-* Improce DECAY param, have diffeent filters react differently as the slider changes.
+* Improve DECAY param, have diffeent filters react differently as the slider changes.
 * 
 * Add decompose section, ways to take the generated sound apart in time and space - this was a big part of the plugin concept.
 * Slider 'SPACE' or 'STEREO' randomly places a harmonic overtone (resonant filter) in the L or R buffer.
@@ -35,7 +35,7 @@
 * Can make wind chime sounds and can get a bit granular with short decay times (tested in Max/MSP).
 * 
 * Lots of UI impovements can be made - a sytle a bit like Shakmat Modular with the diagonal stripes.
-* Have a way to visulize the structure of the overtones, maybe used
+* Have a way to visulize the structure of the overtones, maybe useing Lissajous Patterns!
 */
 
 
